@@ -1,0 +1,12 @@
+else if (result.files.single.extension?.toLowerCase() == 'mp4' ||
+          result.files.single.extension?.toLowerCase() == 'mov' ||
+          result.files.single.extension?.toLowerCase() == 'avi') {
+        print('Picked Video: ${file.path}');
+        videoFile = file;
+        uploadVideo();
+      } 
+
+      'gif',
+        'mp4',
+        'mov',
+        'avi',

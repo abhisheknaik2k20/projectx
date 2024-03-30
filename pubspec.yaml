@@ -1,0 +1,156 @@
+name: projectx
+description: "A new Flutter project."
+
+publish_to: 'none' 
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.3 <4.0.0'
+
+dependencies:
+  url_launcher: ^6.0.13
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  cloud_firestore: ^4.13.6
+  firebase_analytics: ^10.7.4
+  rive: ^0.12.4
+  google_fonts: ^6.1.0
+  android_intent_plus: ^4.0.3
+  stroke_text: ^0.0.2
+  faker: ^2.1.0
+  helpers: ^1.2.3
+  random_date: ^0.0.7
+  get: ^4.6.6
+  pinput: ^3.0.1
+  lottie: ^3.0.0
+  liquid_swipe: ^3.1.0
+  smooth_page_indicator: ^1.1.0
+  google_nav_bar: ^5.0.6
+  flutter_floating_bottom_bar: ^1.2.0
+  google_sign_in: ^6.2.1
+  permission_handler: ^11.2.0
+  contacts_service: ^0.6.3
+  riverpod: ^2.4.9
+  hooks_riverpod: ^2.4.9
+  liquid_pull_to_refresh: ^3.0.1
+  hidden_drawer_menu: ^3.0.1
+  carousel_slider: ^4.2.1
+  chat_gpt_sdk: ^2.2.8
+  flutter_dotenv: ^5.1.0
+  http: ^1.2.0
+  lazy_load_scrollview: ^1.3.0
+  connectivity: ^3.0.6
+  flutter_webrtc: ^0.9.47
+  uuid: ^4.3.3
+  agora_rtc_engine: ^6.2.6
+  image_picker: ^1.0.7
+  firebase_storage: ^11.6.0
+  image_gallery_saver: ^2.0.3
+  dio: ^5.4.0
+  fluttertoast: ^8.2.4
+  video_player: ^2.8.2
+  cached_network_image: ^3.3.1
+  file_picker: ^6.1.1
+  chewie: ^1.7.4
+  photo_view: ^0.14.0
+  flutter_advanced_drawer: ^1.3.5
+  hidden_drawer: ^0.0.1
+  flutter_native_splash: ^2.3.10
+  flutter_carousel_slider: ^1.1.0
+  extended_text_field: ^13.0.1
+  qr_code_scanner: ^1.0.1
+  socket_io_client: ^2.0.3+1
+  intl: any
+  firebase_messaging: ^14.7.10
+  flutter_local_notifications: ^16.3.3
+  flutter_callkit_incoming: ^2.0.1+2
+  callkeep: ^0.3.3
+  background_fetch: ^1.2.3
+  vibration: ^1.8.4
+  giphy_picker: ^3.0.2
+  local_auth: ^2.2.0
+  speech_to_text: ^6.6.0
+  path: ^1.9.0
+  syncfusion_flutter_pdfviewer:
+  font_awesome_flutter: ^10.7.0
+  syncfusion_flutter_datepicker: ^24.2.9
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/logo.png"
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/animation1.json
+    - assets/animation2.json
+    - assets/animation3.json
+    - assets/loading1.json
+    - assets/loading2.json
+    - assets/loading3.json
+    - assets/error1.json
+    - assets/error2.json
+    - assets/OTP2.json
+    - assets/OTP.json
+    - assets/email.json
+    - assets/email2.json
+    - assets/success.json
+    - assets/next.json
+    - assets/hello.json
+    - assets/flutter.json
+    - assets/firebase.json
+    - assets/welcome.json
+    - assets/gc.json
+    - assets/back1.json
+    - assets/back.json
+    - assets/start.json
+    - assets/left1.json
+    - assets/left2.json
+    - assets/log.json
+    - assets/signup.json
+    - assets/chat.json
+    - assets/google.png
+    - assets/facebook.png
+    - assets/noti.json
+    - assets/call.json
+    - assets/message.json
+    - assets/chatgpt.png
+    - assets/profile.json
+    - assets/settings.json
+    - assets/home.json
+    - assets/like.json
+    - assets/profile2.json
+    - assets/backround.json
+    - assets/chat.png
+    - assets/chat2.png
+    - assets/qr.json
+    - assets/qr2.json
+    - assets/qr3.json
+    - assets/fetching.json
+    - assets/desktop.json
+    - assets/wrongqr.json
+    - assets/call.json
+    - assets/startchat.json
+    - assets/chat3.png
+    - assets/mic.json
+    - assets/imageup.png
+    - assets/videoup.png
+    - assets/audioup.png
+    - assets/docup.png
+    - assets/profile.png
+    - assets/editprofile.png
+    - assets/messageup.png
