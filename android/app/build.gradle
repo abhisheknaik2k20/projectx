@@ -1,0 +1,46 @@
+plugins {
+    id "com.android.application"  // IMPORTANT: Use application, not library
+    // START: FlutterFire Configuration
+    id 'com.google.gms.google-services'
+    // END: FlutterFire Configuration
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+android {
+    namespace "com.myprojectapp.projectx"  // Use your actual namespace
+    compileSdk flutter.compileSdkVersion
+    ndkVersion flutter.ndkVersion
+    
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    defaultConfig {
+        applicationId "com.myprojectapp.projectx"  // Matches your namespace
+        minSdk 23
+        targetSdk flutter.targetSdkVersion
+        versionCode flutter.versionCode
+        versionName flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // TODO: Replace with proper release signing configuration
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
