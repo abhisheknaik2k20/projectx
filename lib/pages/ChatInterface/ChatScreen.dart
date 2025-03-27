@@ -4,7 +4,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:pinput/pinput.dart';
 import 'package:projectx/pages/ChatInterface/AppBar.dart';
 import 'package:projectx/pages/ChatInterface/Message.dart';
 import 'package:projectx/pages/ChatInterface/Widget_list.dart';
@@ -102,9 +101,9 @@ class _ChatPageContentState extends State<ChatPageContent>
         setState(() {
           if (_messageController.text.isNotEmpty) {
             String newString = result.recognizedWords;
-            _messageController.setText('$ogText $newString');
+            _messageController.text = '$ogText $newString';
           } else {
-            _messageController.setText(result.recognizedWords);
+            _messageController.text = result.recognizedWords;
           }
         });
       },

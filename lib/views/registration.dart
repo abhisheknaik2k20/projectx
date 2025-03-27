@@ -1,8 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pinput/pinput.dart';
 import 'package:projectx/pages/HomeScreen.dart';
 import 'package:projectx/views/reg_Form.dart';
 import 'package:projectx/views/verify_mail.dart';
@@ -375,121 +373,6 @@ class _RegistrationPage extends State<RegistrationPage> {
                                           },
                                         ),
                                         labelText: "Password",
-                                        labelStyle: const TextStyle(
-                                            color: Colors.white),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                              color: Colors.grey.shade200),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                            color: Colors.teal.shade500,
-                                          ),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 10),
-                                    child: TextFormField(
-                                      onTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (BuildContext context) {
-                                            return AlertDialog(
-                                              title: Text(
-                                                "Pick Date",
-                                                style: TextStyle(
-                                                  fontSize: 30,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.teal.shade400,
-                                                  fontFamily: 'Roboto',
-                                                ),
-                                              ),
-                                              content: SizedBox(
-                                                height: 100,
-                                                child: CupertinoDatePicker(
-                                                  mode: CupertinoDatePickerMode
-                                                      .date,
-                                                  initialDateTime:
-                                                      DateTime(1999, 1, 1),
-                                                  onDateTimeChanged:
-                                                      (DateTime newDateTime) {
-                                                    controller
-                                                        .dateofbirthcontrol
-                                                        .setText(newDateTime
-                                                            .toString());
-                                                  },
-                                                ),
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  child: Text(
-                                                    "Done",
-                                                    style: TextStyle(
-                                                      fontSize: 20,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color:
-                                                          Colors.teal.shade400,
-                                                      fontFamily: 'Roboto',
-                                                    ),
-                                                  ),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  child: Text(
-                                                    "Close",
-                                                    style: TextStyle(
-                                                      fontSize: 20,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color:
-                                                          Colors.teal.shade400,
-                                                      fontFamily: 'Roboto',
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-                                      },
-                                      readOnly: true,
-                                      controller: controller.dateofbirthcontrol,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Date of Birth is required';
-                                        }
-                                        return null;
-                                      },
-                                      style:
-                                          const TextStyle(color: Colors.white),
-                                      cursorColor: Colors.white,
-                                      decoration: InputDecoration(
-                                        errorStyle: const TextStyle(
-                                            color: Colors.white),
-                                        errorBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                              color: Colors.red.shade900),
-                                        ),
-                                        focusedErrorBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                              color: Colors.teal.shade500),
-                                        ),
-                                        prefixIcon: const Icon(
-                                            Icons.calendar_month,
-                                            color: Colors.white),
-                                        labelText: "Date of Birth",
                                         labelStyle: const TextStyle(
                                             color: Colors.white),
                                         enabledBorder: OutlineInputBorder(

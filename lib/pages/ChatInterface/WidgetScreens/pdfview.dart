@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:pinput/pinput.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
 
@@ -22,7 +21,9 @@ class _PDFViewerState extends State<PDFViewer> {
   final _pdfViewerController = PdfViewerController();
 
   void SetPage(int pagenum, int totalpages) {
-    _textEditingController.setText("$pagenum / $totalpages");
+    setState(() {
+      _textEditingController.text = "$pagenum / $totalpages";
+    });
   }
 
   @override
