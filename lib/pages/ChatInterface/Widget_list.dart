@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:projectx/pages/ChatInterface/ImagePage.dart';
-import 'package:projectx/pages/ChatInterface/PDFView/pdfview.dart';
-import 'package:projectx/pages/ChatInterface/Video_player/VideoPlayer.dart';
+import 'package:projectx/pages/ChatInterface/WidgetScreens/ImagePage.dart';
+import 'package:projectx/pages/ChatInterface/WidgetScreens/VideoPlayer.dart';
 import 'package:projectx/pages/ChatInterface/chat_Service.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class WhatsAppMessageList extends StatelessWidget {
   final String receiverUid;
@@ -46,24 +46,24 @@ class WhatsAppMessageList extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.chat_bubble_outline,
+                  Icons.chat,
                   size: 100,
-                  color: Colors.green.shade300,
+                  color: Colors.teal[300],
                 ),
                 const SizedBox(height: 20),
                 Text(
                   'No messages yet',
                   style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey.shade600,
-                  ),
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold),
                 ),
                 Text(
                   'Start a conversation',
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade500,
-                  ),
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -117,14 +117,6 @@ class WhatsAppMessageList extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
             ),
-            if (data['filename'] != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text(
-                  data['filename'],
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
           ],
         );
         break;
@@ -139,17 +131,20 @@ class WhatsAppMessageList extends StatelessWidget {
               ),
               padding: const EdgeInsets.all(10),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.play_circle_fill, color: Colors.purple),
+                  const Icon(
+                    Icons.play_circle_fill,
+                    color: Colors.purple,
+                    size: 50,
+                  ),
                   const SizedBox(width: 10),
                   Flexible(
                     child: Text(
-                      data['filename'] ?? 'Video',
+                      'Video',
                       style: const TextStyle(
-                        color: Colors.purple,
-                        fontWeight: FontWeight.bold,
-                      ),
+                          color: Colors.purple,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 30),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -167,17 +162,20 @@ class WhatsAppMessageList extends StatelessWidget {
           ),
           padding: const EdgeInsets.all(10),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.audiotrack, color: Colors.orange),
+              const Icon(
+                Icons.audiotrack,
+                color: Colors.orange,
+                size: 50,
+              ),
               const SizedBox(width: 10),
               Flexible(
                 child: Text(
-                  data['filename'] ?? 'Audio',
+                  'Audio',
                   style: const TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 30),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -193,17 +191,20 @@ class WhatsAppMessageList extends StatelessWidget {
           ),
           padding: const EdgeInsets.all(10),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.picture_as_pdf, color: Colors.red),
+              const Icon(
+                Icons.picture_as_pdf,
+                color: Colors.red,
+                size: 50,
+              ),
               const SizedBox(width: 10),
               Flexible(
                 child: Text(
-                  data['filename'] ?? 'PDF Document',
+                  'PDF Document',
                   style: const TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 30),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -301,9 +302,14 @@ class WhatsAppMessageList extends StatelessWidget {
                   builder: (context) => VideoPlayerView(data: data),
                 ),
               )
-            : Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => PDFViewer(data: data)),
-              );
+            : data['type'] == "PDF"
+                ? Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          SfPdfViewer.network(data['message']),
+                    ),
+                  )
+                : Container();
   }
 
   void _showBottomSheetDetails(Map<String, dynamic> data, bool value,

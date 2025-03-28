@@ -198,7 +198,6 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           child: _buildLocalVideoPreview(),
         ),
 
-        // Mute/Audio indicator
         if (roomData?['${otherUser}Audio'] == false)
           const Positioned(
             top: 40,
@@ -209,8 +208,6 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
               size: 30,
             ),
           ),
-
-        // Bottom control buttons
         Positioned(
           bottom: 30,
           left: 0,

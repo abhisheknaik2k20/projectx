@@ -1,19 +1,14 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:projectx/pages/ChatInterface/AppBar.dart';
-import 'package:projectx/pages/ChatInterface/Message.dart';
 import 'package:projectx/pages/ChatInterface/Widget_list.dart';
 import 'package:projectx/pages/ChatInterface/chat_Service.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:uuid/uuid.dart';
-import 'package:http/http.dart' as http;
 
 class ChatPage extends StatelessWidget {
   final String receiverEmail;
@@ -64,7 +59,6 @@ class _ChatPageContentState extends State<ChatPageContent>
   final ChatService _chatService = ChatService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ScrollController _scrollController = ScrollController();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final SpeechToText _speechToText = SpeechToText();
   String wordsSpoken = '';
   File? imageFile;
@@ -103,7 +97,7 @@ class _ChatPageContentState extends State<ChatPageContent>
             String newString = result.recognizedWords;
             _messageController.text = '$ogText $newString';
           } else {
-            _messageController.text = result.recognizedWords;
+            _messageController.text = (result.recognizedWords);
           }
         });
       },
@@ -160,7 +154,10 @@ class _ChatPageContentState extends State<ChatPageContent>
           result.files.single.extension?.toLowerCase() == 'png' ||
           result.files.single.extension?.toLowerCase() == 'gif') {
         imageFile = file;
-        uploadImage(result.files.single.name);
+        S3UploadService().uploadAndSendImage(
+            imageFile: imageFile!,
+            receiverUid: widget.receiverUid,
+            receiverEmail: widget.receiverEmail);
       } else {
         print("Unsupported file type");
       }
@@ -178,7 +175,10 @@ class _ChatPageContentState extends State<ChatPageContent>
           result.files.single.extension?.toLowerCase() == 'mov' ||
           result.files.single.extension?.toLowerCase() == 'avi') {
         videoFile = file;
-        uploadVideo(result.files.single.name);
+        S3UploadService().uploadAndSendVideo(
+            videoFile: videoFile!,
+            receiverUid: widget.receiverUid,
+            receiverEmail: widget.receiverEmail);
       }
     }
   }
@@ -195,7 +195,10 @@ class _ChatPageContentState extends State<ChatPageContent>
           result.files.single.extension?.toLowerCase() == 'opus' ||
           result.files.single.extension?.toLowerCase() == 'aac') {
         audioFile = file;
-        uploadAudio(result.files.single.name);
+        S3UploadService().uploadAndSendAudio(
+            audioFile: audioFile!,
+            receiverUid: widget.receiverUid,
+            receiverEmail: widget.receiverEmail);
       }
     }
   }
@@ -210,588 +213,226 @@ class _ChatPageContentState extends State<ChatPageContent>
       print(result.files.single.name);
       if (result.files.single.extension?.toLowerCase() == 'pdf') {
         docFile = file;
-        uploadPDF(result.files.single.name);
-      }
-    }
-  }
-
-  Future uploadVideo(String actualfilename) async {
-    String filename = const Uuid().v1();
-    int status = 1;
-    List<String> ids = [_auth.currentUser!.uid, widget.receiverUid];
-    ids.sort();
-    String ChatroomID = ids.join("_");
-    await _firestore
-        .collection('chat_Rooms')
-        .doc(ChatroomID)
-        .collection('messages')
-        .doc(filename)
-        .set({
-      'senderName': _auth.currentUser!.displayName,
-      'senderId': _auth.currentUser!.uid,
-      'senderEmail': _auth.currentUser!.email,
-      'reciverId': widget.receiverEmail,
-      'message': '',
-      'timestamp': Timestamp.now(),
-      'type': 'Video',
-      'filename': actualfilename
-    });
-    var ref =
-        FirebaseStorage.instance.ref().child('videos').child(actualfilename);
-    // ignore: body_might_complete_normally_catch_error
-    await ref.putFile(videoFile!).catchError((error) async {
-      await _firestore
-          .collection('chat_Rooms')
-          .doc(ChatroomID)
-          .collection('messages')
-          .doc(filename)
-          .delete();
-      status = 0;
-    });
-    if (status == 1) {
-      String ImageUrl = await ref.getDownloadURL();
-      await _firestore
-          .collection('chat_Rooms')
-          .doc(ChatroomID)
-          .collection('messages')
-          .doc(filename)
-          .update({'message': ImageUrl});
-      try {
-        DocumentSnapshot snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(widget.receiverUid)
-            .get();
-        Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
-        // print('fcmToken :' + data!['fcmToken']);
-        var object = {
-          'to': data?['fcmToken'],
-          'priority': 'high',
-          'notification': {
-            'title': _auth.currentUser!.displayName,
-            'body': 'Video'
-          }
-        };
-        NotificationInfo notificationInfo = NotificationInfo(
-          senderName: _auth.currentUser!.displayName!,
-          senderID: _auth.currentUser!.uid,
-          senderEmail: _auth.currentUser!.email!,
-          reciverId: widget.receiverUid,
-          recieveMessage: ImageUrl,
-          timestamp: Timestamp.now(),
-          type: 'Video',
-        );
-        await _firestore
-            .collection('users')
-            .doc(widget.receiverUid)
-            .collection('noti_Info')
-            .add(notificationInfo.toMap());
-        await http.post(
-          Uri.parse('https://fcm.googleapis.com/fcm/send'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization':
-                'key=AAAADHtCBX4:APA91bFlK9ZKNKNP0c46KUBQRgnEpf4d1mXhjtjbZXO0Wcp3-zFTPYkKzqUNooJjw6NIwT7BCwlp0Zh9jQ8OpunTJcUk2GsHUj5pngLO-8CXiPPdhGzw0NCStfyryRIel6RkDhn5OTfH',
-          },
-          body: jsonEncode(object),
-        );
-
-        //print(response.statusCode);
-        //print(response.body);
-      } catch (Except) {
-        //print(Except);
-      }
-    }
-  }
-
-  Future uploadAudio(String actualfilename) async {
-    String filename = const Uuid().v1();
-    int status = 1;
-    List<String> ids = [_auth.currentUser!.uid, widget.receiverUid];
-    ids.sort();
-    String ChatroomID = ids.join("_");
-    await _firestore
-        .collection('chat_Rooms')
-        .doc(ChatroomID)
-        .collection('messages')
-        .doc(filename)
-        .set({
-      'senderName': _auth.currentUser!.displayName,
-      'senderId': _auth.currentUser!.uid,
-      'senderEmail': _auth.currentUser!.email,
-      'reciverId': widget.receiverEmail,
-      'message': '',
-      'timestamp': Timestamp.now(),
-      'type': 'Audio',
-      'filename': actualfilename
-    });
-    var ref =
-        FirebaseStorage.instance.ref().child('audio').child(actualfilename);
-    // ignore: body_might_complete_normally_catch_error
-    await ref.putFile(audioFile!).catchError((error) async {
-      await _firestore
-          .collection('chat_Rooms')
-          .doc(ChatroomID)
-          .collection('messages')
-          .doc(filename)
-          .delete();
-      status = 0;
-    });
-    if (status == 1) {
-      String ImageUrl = await ref.getDownloadURL();
-      await _firestore
-          .collection('chat_Rooms')
-          .doc(ChatroomID)
-          .collection('messages')
-          .doc(filename)
-          .update({'message': ImageUrl});
-      try {
-        DocumentSnapshot snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(widget.receiverUid)
-            .get();
-        Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
-        var object = {
-          'to': data?['fcmToken'],
-          'priority': 'high',
-          'notification': {
-            'title': _auth.currentUser!.displayName,
-            'body': 'Audio'
-          }
-        };
-        NotificationInfo notificationInfo = NotificationInfo(
-          senderName: _auth.currentUser!.displayName!,
-          senderID: _auth.currentUser!.uid,
-          senderEmail: _auth.currentUser!.email!,
-          reciverId: widget.receiverUid,
-          recieveMessage: ImageUrl,
-          timestamp: Timestamp.now(),
-          type: 'Audio',
-        );
-        await _firestore
-            .collection('users')
-            .doc(widget.receiverUid)
-            .collection('noti_Info')
-            .add(notificationInfo.toMap());
-        await http.post(
-          Uri.parse('https://fcm.googleapis.com/fcm/send'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization':
-                'key=AAAADHtCBX4:APA91bFlK9ZKNKNP0c46KUBQRgnEpf4d1mXhjtjbZXO0Wcp3-zFTPYkKzqUNooJjw6NIwT7BCwlp0Zh9jQ8OpunTJcUk2GsHUj5pngLO-8CXiPPdhGzw0NCStfyryRIel6RkDhn5OTfH',
-          },
-          body: jsonEncode(object),
-        );
-      } catch (Except) {
-        //  print(Except);
-      }
-    }
-  }
-
-  Future uploadPDF(String actualfilename) async {
-    String filename = const Uuid().v1();
-    int status = 1;
-    List<String> ids = [_auth.currentUser!.uid, widget.receiverUid];
-    ids.sort();
-    String ChatroomID = ids.join("_");
-    await _firestore
-        .collection('chat_Rooms')
-        .doc(ChatroomID)
-        .collection('messages')
-        .doc(filename)
-        .set({
-      'senderName': _auth.currentUser!.displayName,
-      'senderId': _auth.currentUser!.uid,
-      'senderEmail': _auth.currentUser!.email,
-      'reciverId': widget.receiverEmail,
-      'message': '',
-      'timestamp': Timestamp.now(),
-      'type': 'PDF',
-      'filename': actualfilename
-    });
-    var ref = FirebaseStorage.instance.ref().child('pdf').child(actualfilename);
-    // ignore: body_might_complete_normally_catch_error
-    await ref.putFile(docFile!).catchError((error) async {
-      await _firestore
-          .collection('chat_Rooms')
-          .doc(ChatroomID)
-          .collection('messages')
-          .doc(filename)
-          .delete();
-      status = 0;
-    });
-    if (status == 1) {
-      String ImageUrl = await ref.getDownloadURL();
-      await _firestore
-          .collection('chat_Rooms')
-          .doc(ChatroomID)
-          .collection('messages')
-          .doc(filename)
-          .update({'message': ImageUrl});
-      try {
-        DocumentSnapshot snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(widget.receiverUid)
-            .get();
-        Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
-        // print('fcmToken :' + data!['fcmToken']);
-        var object = {
-          'to': data?['fcmToken'],
-          'priority': 'high',
-          'notification': {
-            'title': _auth.currentUser!.displayName,
-            'body': 'PDF'
-          }
-        };
-        NotificationInfo notificationInfo = NotificationInfo(
-          senderName: _auth.currentUser!.displayName!,
-          senderID: _auth.currentUser!.uid,
-          senderEmail: _auth.currentUser!.email!,
-          reciverId: widget.receiverUid,
-          recieveMessage: ImageUrl,
-          timestamp: Timestamp.now(),
-          type: 'PDF',
-        );
-        await _firestore
-            .collection('users')
-            .doc(widget.receiverUid)
-            .collection('noti_Info')
-            .add(notificationInfo.toMap());
-        await http.post(
-          Uri.parse('https://fcm.googleapis.com/fcm/send'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization':
-                'key=AAAADHtCBX4:APA91bFlK9ZKNKNP0c46KUBQRgnEpf4d1mXhjtjbZXO0Wcp3-zFTPYkKzqUNooJjw6NIwT7BCwlp0Zh9jQ8OpunTJcUk2GsHUj5pngLO-8CXiPPdhGzw0NCStfyryRIel6RkDhn5OTfH',
-          },
-          body: jsonEncode(object),
-        );
-
-        //print(response.statusCode);
-        //print(response.body);
-      } catch (Except) {
-        //print(Except);
-      }
-    }
-  }
-
-  Future uploadImage(String actualfilename) async {
-    String filename = const Uuid().v1();
-    int status = 1;
-    List<String> ids = [_auth.currentUser!.uid, widget.receiverUid];
-    ids.sort();
-    String ChatroomID = ids.join("_");
-    await _firestore
-        .collection('chat_Rooms')
-        .doc(ChatroomID)
-        .collection('messages')
-        .doc(filename)
-        .set({
-      'senderName': _auth.currentUser!.displayName,
-      'senderId': _auth.currentUser!.uid,
-      'senderEmail': _auth.currentUser!.email,
-      'reciverId': widget.receiverEmail,
-      'message': '',
-      'timestamp': Timestamp.now(),
-      'type': 'Image',
-      'filename': actualfilename,
-    });
-    var ref =
-        FirebaseStorage.instance.ref().child('images').child(actualfilename);
-    // ignore: body_might_complete_normally_catch_error
-    await ref.putFile(imageFile!).catchError((error) async {
-      await _firestore
-          .collection('chat_Rooms')
-          .doc(ChatroomID)
-          .collection('messages')
-          .doc(filename)
-          .delete();
-      status = 0;
-    });
-    if (status == 1) {
-      String ImageUrl = await ref.getDownloadURL();
-      await _firestore
-          .collection('chat_Rooms')
-          .doc(ChatroomID)
-          .collection('messages')
-          .doc(filename)
-          .update({'message': ImageUrl});
-      print(ImageUrl);
-      try {
-        DocumentSnapshot snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(widget.receiverUid)
-            .get();
-        Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
-        print('fcmToken :' + data!['fcmToken']);
-        var object = {
-          'to': data['fcmToken'],
-          'priority': 'high',
-          'notification': {
-            'title': _auth.currentUser!.displayName,
-            'body': 'Image'
-          }
-        };
-        NotificationInfo notificationInfo = NotificationInfo(
-          senderName: _auth.currentUser!.displayName!,
-          senderID: _auth.currentUser!.uid,
-          senderEmail: _auth.currentUser!.email!,
-          reciverId: widget.receiverUid,
-          recieveMessage: ImageUrl,
-          timestamp: Timestamp.now(),
-          type: 'Image',
-        );
-        await _firestore
-            .collection('users')
-            .doc(widget.receiverUid)
-            .collection('noti_Info')
-            .add(notificationInfo.toMap());
-
-        var response = await http.post(
-          Uri.parse('https://fcm.googleapis.com/fcm/send'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization':
-                'key=AAAADHtCBX4:APA91bFlK9ZKNKNP0c46KUBQRgnEpf4d1mXhjtjbZXO0Wcp3-zFTPYkKzqUNooJjw6NIwT7BCwlp0Zh9jQ8OpunTJcUk2GsHUj5pngLO-8CXiPPdhGzw0NCStfyryRIel6RkDhn5OTfH',
-          },
-          body: jsonEncode(object),
-        );
-
-        print(response.statusCode);
-        print(response.body);
-      } catch (except) {
-        print(except);
+        S3UploadService().uploadAndSendPDF(
+            pdfFile: docFile!,
+            receiverUid: widget.receiverUid,
+            receiverEmail: widget.receiverEmail);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
+    return Column(children: [
+      Expanded(
           child: WhatsAppMessageList(
-            receiverUid: widget.receiverUid,
-            scrollController: _scrollController,
-            auth: _auth,
-            chatService: _chatService,
-            context: context,
-            chatroomid: ChatroomID,
-          ),
-        ),
-        _buildMessageInput(),
-      ],
-    );
+              receiverUid: widget.receiverUid,
+              scrollController: _scrollController,
+              auth: _auth,
+              chatService: _chatService,
+              context: context,
+              chatroomid: ChatroomID)),
+      _buildMessageInput()
+    ]);
   }
 
   Widget _buildMessageInput() {
     return Container(
-      padding: const EdgeInsets.all(8),
-      color: Colors.black87,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      color: Colors.grey.shade900,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           IconButton(
             onPressed: () {
               showBottomSheet(
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(40),
-                    topRight: Radius.circular(40),
-                  ),
-                ),
-                context: context,
-                builder: (context) {
-                  return Container(
-                    padding: const EdgeInsets.only(
-                      top: 20,
-                      left: 4,
-                      right: 4,
-                    ),
-                    height: 325,
-                    decoration: const BoxDecoration(
-                      color: Color.fromARGB(255, 44, 43, 43),
+                  shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(40),
-                        topRight: Radius.circular(40),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: 20,
-                          ),
-                          child: Container(
-                            height: 2,
-                            width: 150,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                Navigator.of(context).pop();
-                                getImage();
-                              },
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset('assets/imageup.png', width: 100),
-                                  const Text(
-                                    'Send Image',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                Navigator.of(context).pop();
-                                getVideo();
-                              },
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    'assets/videoup.png',
-                                    width: 100,
-                                  ),
-                                  const Text(
-                                    'Send Video',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                Navigator.of(context).pop();
-                                getAudio();
-                              },
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    'assets/audioup.png',
-                                    width: 100,
-                                  ),
-                                  const Text(
-                                    'Send Audio',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                Navigator.of(context).pop();
-                                getDocs();
-                              },
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    'assets/docup.png',
-                                    width: 100,
-                                    height: 100,
-                                  ),
-                                  const Text(
-                                    'Send PDF',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                Navigator.of(context).pop();
-                                startListning();
-                              },
-                              child: const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.mic,
-                                    color: Colors.teal,
-                                  ),
-                                  Text(
-                                    'Speech to Text',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
-                  );
-                },
-              );
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20))),
+                  context: context,
+                  builder: (context) {
+                    return Container(
+                        padding:
+                            const EdgeInsets.only(top: 20, left: 4, right: 4),
+                        height: 325,
+                        decoration: BoxDecoration(
+                            color: Colors.grey[800],
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20))),
+                        child: Column(children: [
+                          // Bottom sheet content (same as previous implementation)
+                          Padding(
+                              padding: const EdgeInsets.only(bottom: 20),
+                              child: Container(
+                                  height: 4,
+                                  width: 50,
+                                  decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(2)))),
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                InkWell(
+                                    onTap: () {
+                                      Navigator.of(context).pop();
+                                      getImage();
+                                    },
+                                    child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor:
+                                                Colors.green.shade100,
+                                            radius: 40,
+                                            child: Icon(Icons.image,
+                                                color: Colors.green, size: 40),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          const Text('Gallery',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20))
+                                        ])),
+                                InkWell(
+                                    onTap: () {
+                                      Navigator.of(context).pop();
+                                      getVideo();
+                                    },
+                                    child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor:
+                                                Colors.purple.shade100,
+                                            radius: 40,
+                                            child: Icon(Icons.video_library,
+                                                color: Colors.purple, size: 40),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          const Text('Video',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20))
+                                        ])),
+                                InkWell(
+                                    onTap: () {
+                                      Navigator.of(context).pop();
+                                      getAudio();
+                                    },
+                                    child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor:
+                                                Colors.orange.shade100,
+                                            radius: 40,
+                                            child: Icon(Icons.audiotrack,
+                                                color: Colors.orange, size: 40),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          const Text('Audio',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20))
+                                        ])),
+                              ]),
+                          const SizedBox(height: 20),
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                InkWell(
+                                    onTap: () {
+                                      Navigator.of(context).pop();
+                                      getDocs();
+                                    },
+                                    child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor:
+                                                Colors.blue.shade100,
+                                            radius: 40,
+                                            child: Icon(Icons.file_present,
+                                                color: Colors.blue, size: 40),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          const Text('Document',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20))
+                                        ])),
+                                InkWell(
+                                    onTap: () {
+                                      Navigator.of(context).pop();
+                                      startListning();
+                                    },
+                                    child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor:
+                                                Colors.pink.shade100,
+                                            radius: 40,
+                                            child: Icon(Icons.mic,
+                                                color: Colors.pink, size: 40),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          const Text('Audio',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20))
+                                        ])),
+                              ])
+                        ]));
+                  });
             },
-            icon: const Icon(
-              Icons.more_vert,
-              color: Colors.white,
+            icon: const Icon(Icons.add, color: Colors.grey, size: 28),
+          ),
+          Expanded(
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 140),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: isListning
+                  ? Center(
+                      child: Text(
+                        'Listening...',
+                        style: TextStyle(color: Colors.green[700]),
+                      ),
+                    )
+                  : TextField(
+                      controller: _messageController,
+                      maxLines: null,
+                      keyboardType: TextInputType.multiline,
+                      decoration: InputDecoration(
+                        hintText: 'Type a message',
+                        hintStyle: TextStyle(color: Colors.grey[500]),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 15, vertical: 10),
+                      ),
+                      style: const TextStyle(color: Colors.black87),
+                    ),
             ),
           ),
-          isListning
-              ? Expanded(
-                  child: Container(),
-                )
-              : Expanded(
-                  child: TextField(
-                    obscureText: false,
-                    controller: _messageController,
-                    style: const TextStyle(
-                      color: Colors.white,
-                    ),
-                    cursorColor: Colors.teal,
-                    decoration: const InputDecoration(
-                      hintText: ' Enter Message Here',
-                      hintStyle: TextStyle(
-                        color: Colors.grey,
-                      ),
-                      focusedBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.white,
-                        ),
-                      ),
-                      border: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0, right: 2.0),
+
+          // Send/Mic button
+          Container(
+            margin: const EdgeInsets.only(left: 8),
             child: GestureDetector(
               onTap: sendMessage,
               onLongPress: () {
@@ -802,31 +443,20 @@ class _ChatPageContentState extends State<ChatPageContent>
                 });
                 _showBottomSheet();
               },
-              onLongPressEnd: (deatils) {
+              onLongPressEnd: (_) {
                 setState(() {
                   isListning = false;
                   stopListning();
                 });
                 Navigator.of(context).pop();
               },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.teal.shade500,
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(10),
-                  ),
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 2.0,
-                  ),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.all(5.0),
-                  child: Icon(
-                    Icons.send_rounded,
-                    size: 40,
-                    color: Colors.white,
-                  ),
+              child: CircleAvatar(
+                backgroundColor: Colors.teal,
+                radius: 22,
+                child: Icon(
+                  isListning ? Icons.mic : Icons.send,
+                  color: Colors.white,
+                  size: 22,
                 ),
               ),
             ),
@@ -839,41 +469,26 @@ class _ChatPageContentState extends State<ChatPageContent>
   void _showBottomSheet() {
     showBottomSheet(
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(40),
-            topRight: Radius.circular(40),
-          ),
-        ),
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(40), topRight: Radius.circular(40))),
         context: context,
         builder: (context) {
           return Container(
-            padding: const EdgeInsets.all(
-              20,
-            ),
-            height: 300,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade900,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(40),
-                topRight: Radius.circular(40),
-              ),
-            ),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.mic, size: 60),
-                SizedBox(
-                  height: 30,
-                ),
-                Text(
-                  'Listning......',
-                  style: TextStyle(
-                    color: Colors.white,
-                  ),
-                )
-              ],
-            ),
-          );
+              padding: const EdgeInsets.all(20),
+              height: 300,
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade900,
+                  borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(40),
+                      topRight: Radius.circular(40))),
+              child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.mic, size: 60, color: Colors.white),
+                    SizedBox(height: 30),
+                    Text('Listning......',
+                        style: TextStyle(color: Colors.white))
+                  ]));
         });
   }
 }

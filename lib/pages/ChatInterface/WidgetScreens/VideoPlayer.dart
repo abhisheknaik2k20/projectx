@@ -7,7 +7,7 @@ import 'package:chewie/chewie.dart';
 
 class VideoPlayerView extends StatefulWidget {
   final Map<String, dynamic> data;
-  const VideoPlayerView({Key? key, required this.data}) : super(key: key);
+  const VideoPlayerView({super.key, required this.data});
 
   @override
   State<VideoPlayerView> createState() => _VideoPlayerViewState();
@@ -56,7 +56,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(
-          widget.data['filename'],
+          widget.data['message'],
           style: const TextStyle(
             color: Colors.white,
             fontSize: 30,

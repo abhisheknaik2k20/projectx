@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
@@ -35,6 +36,81 @@ class _ImagePageState extends State<ImagePage>
     _animationController.reverse();
   }
 
+  // Function to show details in a bottom sheet
+  void _showDetailsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Image Details',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Example detail rows - modify as needed based on your data structure
+                  _buildDetailRow(
+                      'Sender :', widget.data['senderName'] ?? 'Unknown'),
+                  _buildDetailRow('Type', 'Image'),
+                  _buildDetailRow(
+                      "TimeStamp :",
+                      DateFormat('yyyy-MM-dd HH:mm:ss')
+                          .format(widget.data['timestamp'].toDate())),
+                  const SizedBox(height: 20)
+                ]));
+      },
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  // Helper method to create detail rows
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.black54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Future<bool> onWillPop() async {
@@ -58,7 +134,7 @@ class _ImagePageState extends State<ImagePage>
           ),
           centerTitle: true,
           title: Text(
-            widget.data['filename'],
+            widget.data['message'],
             style: const TextStyle(
               color: Colors.white,
               fontSize: 30,
@@ -71,16 +147,13 @@ class _ImagePageState extends State<ImagePage>
                 Icons.info,
                 color: Colors.white,
               ),
-              onPressed: () {},
+              onPressed: _showDetailsBottomSheet,
             ),
           ],
         ),
         body: GestureDetector(
           onVerticalDragUpdate: (details) {
-            if (details.primaryDelta! > 5) {
-              Navigator.of(context).pop();
-            }
-            if (details.primaryDelta! < -5) {
+            if (details.primaryDelta! > 5 || details.primaryDelta! < -5) {
               Navigator.of(context).pop();
             }
           },

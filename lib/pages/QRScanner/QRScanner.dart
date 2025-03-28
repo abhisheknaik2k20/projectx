@@ -3,7 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:projectx/pages/HomeScreen.dart';
+import 'package:projectx/pages/BlackScreen.dart';
 import 'package:projectx/pages/QRScanner/SuccessLoading.dart';
 import 'package:projectx/pages/QRScanner/SuccessPage.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
@@ -277,7 +277,7 @@ class _QRScannerState extends State<QRScanner> {
               TextButton(
                 onPressed: () => Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(
-                      builder: (context) => const HomeScreen(),
+                      builder: (context) => const BlackScreen(),
                     ),
                     (route) => false),
                 child: Text(

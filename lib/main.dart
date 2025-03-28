@@ -2,10 +2,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:projectx/api/firebase_api.dart';
 import 'package:projectx/firebase_options.dart';
-import 'package:projectx/pages/HomeScreen.dart';
-import 'package:projectx/views/login_Page.dart';
+import 'package:projectx/pages/BlackScreen.dart';
+import 'package:projectx/pages/Login/login_screen.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -15,9 +14,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _configureLocalNotifications();
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+    options: DefaultFirebaseOptions.android,
   );
-  FirebaseApi().initNotifications();
+  //FirebaseApi().initNotifications();
   runApp(const MyApp());
 }
 
@@ -47,8 +46,8 @@ class _MyAppState extends State<MyApp> {
       home: StreamBuilder(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) => switch (snapshot) {
-                AsyncSnapshot(hasData: true) => const HomeScreen(),
-                _ => const LoginPage()
+                AsyncSnapshot(hasData: true) => const BlackScreen(),
+                _ => const LoginSignupScreen()
               }),
     );
   }
