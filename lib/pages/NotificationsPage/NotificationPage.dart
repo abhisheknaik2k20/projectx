@@ -30,45 +30,41 @@ class NotificationPage extends StatelessWidget {
 
     return StreamBuilder<QuerySnapshot>(
         stream: getNotifications(currentUser!.uid),
-        builder: (context, snapshot) {
-          return CustomScrollView(slivers: [
-            SliverAppBar(
-                backgroundColor: Colors.teal,
-                leading: IconButton(
-                    icon: const Icon(Icons.menu, color: Colors.white),
-                    onPressed: () => dc.showDrawer()),
-                title: const Text('Notifications',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w500)),
-                floating: true),
-            if (snapshot.hasData && snapshot.data!.docs.isNotEmpty)
-              SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                final document = snapshot.data!.docs[index];
-                return _buildNotificationItem(document, context);
-              }, childCount: snapshot.data!.docs.length))
-            else
-              SliverFillRemaining(child: _buildEmptyState())
-          ]);
-        });
+        builder: (context, snapshot) => CustomScrollView(slivers: [
+              SliverAppBar(
+                  backgroundColor: Colors.teal,
+                  leading: IconButton(
+                      icon: const Icon(Icons.menu, color: Colors.white),
+                      onPressed: () => dc.showDrawer()),
+                  title: const Text('Notifications',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w500)),
+                  floating: true),
+              if (snapshot.hasData && snapshot.data!.docs.isNotEmpty)
+                SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                  final document = snapshot.data!.docs[index];
+                  return _buildNotificationItem(document, context);
+                }, childCount: snapshot.data!.docs.length))
+              else
+                SliverFillRemaining(child: _buildEmptyState())
+            ]));
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.notifications_none_outlined,
-          size: 120, color: Colors.teal.shade300),
-      const SizedBox(height: 16),
-      Text('No Notifications',
-          style: TextStyle(
-              fontSize: 22,
-              color: Colors.teal.shade800,
-              fontWeight: FontWeight.w400)),
-      const SizedBox(height: 8),
-      Text('You\'re all caught up!',
-          style: TextStyle(fontSize: 16, color: Colors.grey.shade600))
-    ]));
-  }
+  Widget _buildEmptyState() => Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.notifications_none_outlined,
+            size: 120, color: Colors.teal.shade300),
+        const SizedBox(height: 16),
+        Text('No Notifications',
+            style: TextStyle(
+                fontSize: 22,
+                color: Colors.teal.shade800,
+                fontWeight: FontWeight.w400)),
+        const SizedBox(height: 8),
+        Text('You\'re all caught up!',
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600))
+      ]));
 
   Widget _buildNotificationItem(
       DocumentSnapshot document, BuildContext context) {

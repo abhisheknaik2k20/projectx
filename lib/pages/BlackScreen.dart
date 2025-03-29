@@ -117,6 +117,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+  final ValueNotifier<double> valueNotifier = ValueNotifier(1.0);
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
   late PageController _pageController;
@@ -137,7 +138,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _pages = [
       MessagesPage(dc: widget.dc),
       NotificationPage(dc: widget.dc),
-      const ChatGPTScreen()
+      ChatGPTScreen(valueNotifier: valueNotifier)
     ];
     WidgetsBinding.instance.addObserver(this);
     _pageController = PageController(initialPage: _selectedIndex);
@@ -159,6 +160,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       final animationValue = distanceToChatBot.clamp(0.0, 1.0);
       setState(() {
         _navBarVal = animationValue;
+        valueNotifier.value = 1 - animationValue;
         _showNavBar = animationValue > 0.1;
       });
     } else {
@@ -194,6 +196,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    valueNotifier.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _pageController.removeListener(_handlePageChange);
     _pageController.dispose();

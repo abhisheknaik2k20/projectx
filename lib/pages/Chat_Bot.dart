@@ -7,7 +7,8 @@ import 'dart:io';
 import 'package:SwiftTalk/API_KEYS.dart';
 
 class ChatGPTScreen extends StatefulWidget {
-  const ChatGPTScreen({super.key});
+  final ValueNotifier<double> valueNotifier;
+  const ChatGPTScreen({required this.valueNotifier, super.key});
 
   @override
   State<ChatGPTScreen> createState() => _ChatGPTScreenState();
@@ -198,9 +199,8 @@ class _ChatGPTScreenState extends State<ChatGPTScreen> {
                           config: MarkdownConfig(configs: [
                             CodeConfig(
                                 style: TextStyle(
-                              backgroundColor: Colors.grey.shade100,
-                              fontFamily: 'monospace',
-                            ))
+                                    backgroundColor: Colors.grey.shade100,
+                                    fontFamily: 'monospace'))
                           ]))
                     ]))
             .animate()
@@ -250,39 +250,47 @@ class _ChatGPTScreenState extends State<ChatGPTScreen> {
           delay: Duration(milliseconds: index * 200));
 
   Widget _buildMessageInput() {
-    return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        color: Colors.grey[900],
-        child: Row(children: [
-          Container(
-              decoration: BoxDecoration(
-                  color: Colors.white, borderRadius: BorderRadius.circular(5)),
-              child: IconButton(
-                  icon: const Icon(Icons.image, color: Colors.teal),
-                  onPressed: _pickImage)),
-          SizedBox(width: 5),
-          Expanded(
-              child: Container(
-                  decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(5)),
-                  child: TextField(
-                      controller: _messageController,
-                      maxLines: null,
-                      decoration: InputDecoration(
-                        hintText: 'Type your message...',
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
-                      )))),
-          SizedBox(width: 5),
-          Container(
-              decoration: BoxDecoration(
-                  color: Colors.teal, borderRadius: BorderRadius.circular(5)),
-              child: IconButton(
-                  icon: const Icon(Icons.send, color: Colors.white),
-                  onPressed: _sendMessage)),
-        ]));
+    return ValueListenableBuilder(
+        valueListenable: widget.valueNotifier,
+        builder: (context, navbarheight, child) {
+          return AnimatedContainer(
+              height: 76 * navbarheight,
+              duration: Duration(microseconds: 100),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              color: Colors.grey[300],
+              child: Row(children: [
+                Container(
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(5)),
+                    child: IconButton(
+                        icon: const Icon(Icons.image, color: Colors.teal),
+                        onPressed: _pickImage)),
+                SizedBox(width: 5),
+                Expanded(
+                    child: Container(
+                        decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(5)),
+                        child: TextField(
+                            controller: _messageController,
+                            maxLines: null,
+                            decoration: InputDecoration(
+                              hintText: 'Type your message...',
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 12),
+                            )))),
+                SizedBox(width: 5),
+                Container(
+                    decoration: BoxDecoration(
+                        color: Colors.teal,
+                        borderRadius: BorderRadius.circular(5)),
+                    child: IconButton(
+                        icon: const Icon(Icons.send, color: Colors.white),
+                        onPressed: _sendMessage)),
+              ]));
+        });
   }
 }
 
