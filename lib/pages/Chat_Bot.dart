@@ -251,28 +251,37 @@ class _ChatGPTScreenState extends State<ChatGPTScreen> {
 
   Widget _buildMessageInput() {
     return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        color: Colors.grey[900],
         child: Row(children: [
-          IconButton(
-              icon: const Icon(Icons.image, color: Colors.teal),
-              onPressed: _pickImage),
+          Container(
+              decoration: BoxDecoration(
+                  color: Colors.white, borderRadius: BorderRadius.circular(5)),
+              child: IconButton(
+                  icon: const Icon(Icons.image, color: Colors.teal),
+                  onPressed: _pickImage)),
+          SizedBox(width: 5),
           Expanded(
               child: Container(
                   decoration: BoxDecoration(
                       color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(30)),
+                      borderRadius: BorderRadius.circular(5)),
                   child: TextField(
                       controller: _messageController,
                       maxLines: null,
                       decoration: InputDecoration(
-                          hintText: 'Type your message...',
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
-                          suffixIcon: IconButton(
-                              icon: const Icon(Icons.send, color: Colors.teal),
-                              onPressed: _sendMessage)))))
+                        hintText: 'Type your message...',
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                      )))),
+          SizedBox(width: 5),
+          Container(
+              decoration: BoxDecoration(
+                  color: Colors.teal, borderRadius: BorderRadius.circular(5)),
+              child: IconButton(
+                  icon: const Icon(Icons.send, color: Colors.white),
+                  onPressed: _sendMessage)),
         ]));
   }
 }

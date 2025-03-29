@@ -127,6 +127,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     const GButton(icon: Icons.notifications_active, text: 'notifications'),
     const GButton(icon: Icons.smart_toy, text: 'BOT')
   ];
+
+  double _navBarVal = 1.0;
+  bool _showNavBar = true;
+
   @override
   void initState() {
     super.initState();
@@ -143,11 +147,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Future<void> _initializeApp() async {
     await _requestContactsPermission();
     await _reloadUser();
-    _pageController.addListener(() {
-      if (mounted) {
-        setState(() => _selectedIndex = _pageController.page!.round());
-      }
-    });
+    _pageController.addListener(_handlePageChange);
+  }
+
+  void _handlePageChange() {
+    if (!mounted) return;
+    final page = _pageController.page;
+    if (page == null) return;
+    final distanceToChatBot = (page - 2).abs();
+    if (distanceToChatBot <= 1) {
+      final animationValue = distanceToChatBot.clamp(0.0, 1.0);
+      setState(() {
+        _navBarVal = animationValue;
+        _showNavBar = animationValue > 0.1;
+      });
+    } else {
+      setState(() {
+        _navBarVal = 1.0;
+        _showNavBar = true;
+      });
+    }
+    setState(() => _selectedIndex = page.round());
   }
 
   Future<void> _requestContactsPermission() async =>
@@ -175,6 +195,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _pageController.removeListener(_handlePageChange);
     _pageController.dispose();
     super.dispose();
   }
@@ -187,29 +208,30 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         body: PageView.builder(
             controller: _pageController,
             itemCount: _pages.length,
-            onPageChanged: (index) {
-              if (mounted) setState(() => _selectedIndex = index);
-            },
+            physics: const PageScrollPhysics(),
             itemBuilder: (context, index) => _pages[index]),
-        bottomNavigationBar: Container(
-            decoration: BoxDecoration(color: Colors.grey.shade900),
-            child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                child: GNav(
-                    selectedIndex: _selectedIndex,
-                    onTabChange: (index) {
-                      _pageController.animateToPage(index,
-                          duration: const Duration(milliseconds: 500),
-                          curve: Curves.ease);
-                      if (mounted) setState(() => _selectedIndex = index);
-                    },
-                    backgroundColor: Colors.grey.shade900,
-                    color: Colors.white,
-                    activeColor: Colors.white,
-                    tabBackgroundColor: Colors.grey.shade800,
-                    gap: 10,
-                    padding: const EdgeInsets.all(16),
-                    tabs: _navItems))));
+        bottomNavigationBar: _showNavBar
+            ? AnimatedContainer(
+                duration: const Duration(microseconds: 300),
+                height: 76 * _navBarVal,
+                decoration: BoxDecoration(color: Colors.grey.shade900),
+                child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
+                    child: GNav(
+                        selectedIndex: _selectedIndex,
+                        onTabChange: (index) {
+                          _pageController.animateToPage(index,
+                              duration: const Duration(milliseconds: 500),
+                              curve: Curves.ease);
+                        },
+                        backgroundColor: Colors.grey.shade900,
+                        color: Colors.white,
+                        activeColor: Colors.white,
+                        tabBackgroundColor: Colors.grey.shade800,
+                        gap: 10,
+                        padding: const EdgeInsets.all(16),
+                        tabs: _navItems)))
+            : const SizedBox.shrink());
   }
 }

@@ -584,7 +584,6 @@ class WhatsAppMessageList extends StatelessWidget {
     bool isCurrentUser = data['senderId'] == _auth.currentUser!.uid;
     String formattedTime =
         DateFormat('hh:mm a').format((data['timestamp'] as Timestamp).toDate());
-
     return GestureDetector(
         onTap: () => _handleMediaTap(data),
         onLongPress: () {
@@ -602,7 +601,7 @@ class WhatsAppMessageList extends StatelessWidget {
                 children: [
                   Container(
                       constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.75),
+                          maxWidth: MediaQuery.of(context).size.width * 0.5),
                       decoration: BoxDecoration(
                           color: isCurrentUser
                               ? Colors.green.shade100
@@ -646,16 +645,22 @@ class WhatsAppMessageList extends StatelessWidget {
         return Text(data['message'], style: const TextStyle(fontSize: 16));
       case 'Image':
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: CachedNetworkImage(
-                  imageUrl: data['message'],
-                  placeholder: (context, url) =>
-                      const CircularProgressIndicator(),
-                  errorWidget: (context, url, error) => const Icon(Icons.error),
-                  width: 250,
-                  height: 250,
-                  fit: BoxFit.cover))
+          Container(
+              width: 175,
+              height: 175,
+              decoration:
+                  BoxDecoration(borderRadius: BorderRadius.circular(10)),
+              child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: CachedNetworkImage(
+                      imageUrl: data['message'],
+                      placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator(color: Colors.teal)),
+                      errorWidget: (context, url, error) =>
+                          const Center(child: Icon(Icons.error)),
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity)))
         ]);
       case 'Video':
       case 'Audio':

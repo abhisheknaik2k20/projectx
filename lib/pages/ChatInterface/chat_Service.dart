@@ -10,6 +10,23 @@ import 'package:path/path.dart' as path;
 class ChatService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<void> updateNotifications(
+      {required String reciverId, required message, required type}) async {
+    await _firestore
+        .collection('users')
+        .doc(reciverId)
+        .collection('noti_Info')
+        .add({
+      "message": message,
+      "reciverId": reciverId,
+      "senderId": _auth.currentUser?.uid ?? 'null',
+      'senderName': _auth.currentUser?.displayName ?? 'unknown',
+      'timestamp': Timestamp.now(),
+      'type': type
+    });
+  }
+
   Future<void> SendMessage(String reciverId, String message) async {
     final String currentUserId = _auth.currentUser!.uid;
     final String currentUserEmail = _auth.currentUser!.email.toString();
@@ -19,11 +36,10 @@ class ChatService extends ChangeNotifier {
       "senderId": currentUserId,
       "senderEmail": currentUserEmail,
       "reciverId": reciverId,
-      "recieveMessage": message,
+      "message": message,
       "timestamp": timestamp,
       "type": 'text'
     };
-
     List<String> ids = [currentUserId, reciverId];
     ids.sort();
     String ChatroomID = ids.join("_");
@@ -33,6 +49,8 @@ class ChatService extends ChangeNotifier {
           .doc(ChatroomID)
           .collection('messages')
           .add(newMessage);
+      await updateNotifications(
+          reciverId: reciverId, message: message, type: "text");
     } catch (except) {
       print(except);
     }
@@ -47,15 +65,6 @@ class ChatService extends ChangeNotifier {
         .doc(ChatroomID)
         .collection('messages')
         .orderBy('timestamp', descending: false)
-        .snapshots();
-  }
-
-  Stream<QuerySnapshot> getNotifications(String userId) {
-    return _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('noti_Info')
-        .orderBy('timestamp', descending: true)
         .snapshots();
   }
 }
@@ -157,6 +166,11 @@ class S3UploadService {
           receiverUid: receiverUid,
           fileType: 'Video',
         );
+
+        await ChatService().updateNotifications(
+            reciverId: receiverUid,
+            message: videoFile.path.split('/').last,
+            type: "Video");
       } else {
         debugPrint('Video upload failed');
       }
@@ -182,6 +196,10 @@ class S3UploadService {
             fileUrl: audioUrl,
             receiverUid: receiverUid,
             fileType: 'Audio');
+        await ChatService().updateNotifications(
+            reciverId: receiverUid,
+            message: audioFile.path.split('/').last,
+            type: "Audio");
       } else {
         debugPrint('Audio upload failed');
       }
@@ -207,6 +225,10 @@ class S3UploadService {
             fileUrl: pdfUrl,
             receiverUid: receiverUid,
             fileType: 'PDF');
+        await ChatService().updateNotifications(
+            reciverId: receiverUid,
+            message: pdfFile.path.split('/').last,
+            type: "PDF");
       } else {
         debugPrint('PDF upload failed');
       }
@@ -320,6 +342,10 @@ class S3UploadService {
             fileName: imageFile.path.split("/").last,
             imageUrl: imageUrl,
             receiverUid: receiverUid);
+        await ChatService().updateNotifications(
+            reciverId: receiverUid,
+            message: imageFile.path.split("/").last,
+            type: "Image");
       } else {
         debugPrint('Image upload failed');
       }
