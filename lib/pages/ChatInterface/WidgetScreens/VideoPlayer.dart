@@ -56,7 +56,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(
-          widget.data['message'],
+          widget.data['fileName'],
           style: const TextStyle(
             color: Colors.white,
             fontSize: 30,

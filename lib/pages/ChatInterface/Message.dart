@@ -9,15 +9,14 @@ class Message {
   final Timestamp timestamp;
   final String type;
 
-  Message({
-    required this.senderName,
-    required this.senderID,
-    required this.senderEmail,
-    required this.reciverId,
-    required this.recieveMessage,
-    required this.timestamp,
-    required this.type,
-  });
+  Message(
+      {required this.senderName,
+      required this.senderID,
+      required this.senderEmail,
+      required this.reciverId,
+      required this.recieveMessage,
+      required this.timestamp,
+      required this.type});
 
   Map<String, dynamic> toMap() {
     return {
@@ -27,7 +26,7 @@ class Message {
       'reciverId': reciverId,
       'message': recieveMessage,
       'timestamp': timestamp,
-      'type': type,
+      'type': type
     };
   }
 }
@@ -41,15 +40,14 @@ class NotificationInfo {
   final Timestamp timestamp;
   final String type;
 
-  NotificationInfo({
-    required this.senderName,
-    required this.senderID,
-    required this.senderEmail,
-    required this.reciverId,
-    required this.recieveMessage,
-    required this.timestamp,
-    required this.type,
-  });
+  NotificationInfo(
+      {required this.senderName,
+      required this.senderID,
+      required this.senderEmail,
+      required this.reciverId,
+      required this.recieveMessage,
+      required this.timestamp,
+      required this.type});
 
   Map<String, dynamic> toMap() {
     return {
@@ -59,7 +57,7 @@ class NotificationInfo {
       'reciverId': reciverId,
       'message': recieveMessage,
       'timestamp': timestamp,
-      'type': type,
+      'type': type
     };
   }
 }

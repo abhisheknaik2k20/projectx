@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'package:SwiftTalk/pages/CallScreen/Call_Provider.dart';
 import 'package:SwiftTalk/pages/CallScreen/Call_Screen.dart';
+import 'package:SwiftTalk/pages/Profile.dart';
+import 'package:SwiftTalk/pages/Web_RTX_CALL_SCREEN/Screen1.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:SwiftTalk/pages/ChatInterface/AppBar.dart';
 import 'package:SwiftTalk/pages/ChatInterface/Widget_list.dart';
 import 'package:SwiftTalk/pages/ChatInterface/Chat_Service.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,123 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
+class WhatsAppChatAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
+  final String receiverEmail;
+  final String receiverUid;
+  final String receiverName;
+  final String chatroomID;
+
+  const WhatsAppChatAppBar(
+      {super.key,
+      required this.receiverEmail,
+      required this.receiverUid,
+      required this.receiverName,
+      required this.chatroomID});
+
+  @override
+  Size get preferredSize => Size.fromHeight(kToolbarHeight + 10);
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = FirebaseAuth.instance;
+    final db = FirebaseFirestore.instance;
+    final currentUserId = auth.currentUser!.uid;
+    final ids = [currentUserId, receiverUid]..sort();
+    final chatRoomId = ids.join("_");
+    void initiateCall() async {
+      await db
+          .collection('users')
+          .doc(receiverUid)
+          .collection('call_info')
+          .doc(receiverUid)
+          .set({
+        'key': chatRoomId,
+        'reciving_Call': true,
+        'sending_Call': false,
+        'caller_Name': auth.currentUser?.displayName
+      });
+      await db
+          .collection('users')
+          .doc(currentUserId)
+          .collection('call_info')
+          .doc(currentUserId)
+          .set({
+        'key': chatRoomId,
+        'reciving_Call': false,
+        'sending_Call': true
+      });
+      await db.collection('users').doc(receiverUid).update({'isCall': true});
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => MyHomePage()));
+    }
+
+    void viewProfile() => Navigator.push(context,
+        MaterialPageRoute(builder: (_) => ProfilePage(UserUID: receiverUid)));
+    return AppBar(
+        backgroundColor: Colors.teal,
+        leadingWidth: 30,
+        leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop()),
+        title: StreamBuilder<DocumentSnapshot>(
+            stream: db.collection('users').doc(receiverUid).snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return Text(receiverName, overflow: TextOverflow.ellipsis);
+              }
+
+              final userData = snapshot.data!;
+              final isOnline = userData['status'] == 'Online';
+
+              return GestureDetector(
+                  onTap: viewProfile,
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    CircleAvatar(
+                        backgroundImage: NetworkImage(userData['photoURL'] ??
+                            'https://default-avatar-url.com/avatar.jpg'),
+                        radius: 20),
+                    SizedBox(width: 10),
+                    Flexible(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                          Text(receiverName,
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis),
+                          Text(userData['status'] ?? 'Offline',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isOnline ? Colors.blue : Colors.white70,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis)
+                        ]))
+                  ]));
+            }),
+        actions: [
+          IconButton(
+              icon: Icon(Icons.video_call, color: Colors.white),
+              onPressed: initiateCall),
+          IconButton(
+              icon: Icon(Icons.call, color: Colors.white), onPressed: () {}),
+          PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert, color: Colors.white),
+              onSelected: (choice) {
+                if (choice == 'View Contact') viewProfile();
+              },
+              itemBuilder: (_) => [
+                    PopupMenuItem(
+                        value: 'View Contact', child: Text('View Contact')),
+                    PopupMenuItem(value: 'Media', child: Text('Media')),
+                    PopupMenuItem(value: 'Search', child: Text('Search'))
+                  ])
+        ]);
+  }
+}
 
 class ChatPage extends StatelessWidget {
   final String receiverEmail;
@@ -151,9 +269,8 @@ class _ChatPageContentState extends State<ChatPageContent>
 
   Future getImage() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'gif'],
-    );
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif']);
     if (result != null) {
       File file = File(result.files.single.path!);
       if (result.files.single.extension?.toLowerCase() == 'jpg' ||
@@ -173,9 +290,7 @@ class _ChatPageContentState extends State<ChatPageContent>
 
   Future getVideo() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['gif', 'mp4', 'mov', 'avi'],
-    );
+        type: FileType.custom, allowedExtensions: ['gif', 'mp4', 'mov', 'avi']);
     if (result != null) {
       File file = File(result.files.single.path!);
       if (result.files.single.extension?.toLowerCase() == 'mp4' ||
@@ -192,9 +307,8 @@ class _ChatPageContentState extends State<ChatPageContent>
 
   Future getAudio() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['mp3', 'm4a', 'opus', 'aac'],
-    );
+        type: FileType.custom,
+        allowedExtensions: ['mp3', 'm4a', 'opus', 'aac']);
     if (result != null) {
       File file = File(result.files.single.path!);
       if (result.files.single.extension?.toLowerCase() == 'mp3' ||
@@ -211,10 +325,8 @@ class _ChatPageContentState extends State<ChatPageContent>
   }
 
   Future getDocs() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
+    FilePickerResult? result = await FilePicker.platform
+        .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
     if (result != null) {
       File file = File(result.files.single.path!);
       print(result.files.single.name);
@@ -245,232 +357,143 @@ class _ChatPageContentState extends State<ChatPageContent>
 
   Widget _buildMessageInput() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      color: Colors.grey.shade900,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        color: Colors.grey.shade900,
+        child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
           IconButton(
-            onPressed: () {
-              showBottomSheet(
-                  shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20))),
-                  context: context,
-                  builder: (context) {
-                    return Container(
-                        padding:
-                            const EdgeInsets.only(top: 20, left: 4, right: 4),
-                        height: 325,
-                        decoration: BoxDecoration(
-                            color: Colors.grey[800],
-                            borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(20),
-                                topRight: Radius.circular(20))),
-                        child: Column(children: [
-                          // Bottom sheet content (same as previous implementation)
-                          Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: Container(
-                                  height: 4,
-                                  width: 50,
-                                  decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(2)))),
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                InkWell(
-                                    onTap: () {
-                                      Navigator.of(context).pop();
-                                      getImage();
-                                    },
-                                    child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          CircleAvatar(
-                                            backgroundColor:
-                                                Colors.green.shade100,
-                                            radius: 40,
-                                            child: Icon(Icons.image,
-                                                color: Colors.green, size: 40),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          const Text('Gallery',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 20))
-                                        ])),
-                                InkWell(
-                                    onTap: () {
-                                      Navigator.of(context).pop();
-                                      getVideo();
-                                    },
-                                    child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          CircleAvatar(
-                                            backgroundColor:
-                                                Colors.purple.shade100,
-                                            radius: 40,
-                                            child: Icon(Icons.video_library,
-                                                color: Colors.purple, size: 40),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          const Text('Video',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 20))
-                                        ])),
-                                InkWell(
-                                    onTap: () {
-                                      Navigator.of(context).pop();
-                                      getAudio();
-                                    },
-                                    child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          CircleAvatar(
-                                            backgroundColor:
-                                                Colors.orange.shade100,
-                                            radius: 40,
-                                            child: Icon(Icons.audiotrack,
-                                                color: Colors.orange, size: 40),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          const Text('Audio',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 20))
-                                        ])),
-                              ]),
-                          const SizedBox(height: 20),
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                InkWell(
-                                    onTap: () {
-                                      Navigator.of(context).pop();
-                                      getDocs();
-                                    },
-                                    child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          CircleAvatar(
-                                            backgroundColor:
-                                                Colors.blue.shade100,
-                                            radius: 40,
-                                            child: Icon(Icons.file_present,
-                                                color: Colors.blue, size: 40),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          const Text('Document',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 20))
-                                        ])),
-                                InkWell(
-                                    onTap: () {
-                                      Navigator.of(context).pop();
-                                      startListning();
-                                    },
-                                    child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          CircleAvatar(
-                                            backgroundColor:
-                                                Colors.pink.shade100,
-                                            radius: 40,
-                                            child: Icon(Icons.mic,
-                                                color: Colors.pink, size: 40),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          const Text('Audio',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 20))
-                                        ])),
-                              ])
-                        ]));
-                  });
-            },
+            onPressed: _showAttachmentOptions,
             icon: const Icon(Icons.add, color: Colors.grey, size: 28),
           ),
           Expanded(
-            child: Container(
-              constraints: const BoxConstraints(maxHeight: 140),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: isListning
-                  ? Center(
-                      child: Text(
-                        'Listening...',
-                        style: TextStyle(color: Colors.green[700]),
-                      ),
-                    )
-                  : TextField(
-                      controller: _messageController,
-                      maxLines: null,
-                      keyboardType: TextInputType.multiline,
-                      decoration: InputDecoration(
-                        hintText: 'Type a message',
-                        hintStyle: TextStyle(color: Colors.grey[500]),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 15, vertical: 10),
-                      ),
-                      style: const TextStyle(color: Colors.black87),
-                    ),
-            ),
-          ),
-
-          // Send/Mic button
+              child: Container(
+                  constraints: const BoxConstraints(maxHeight: 140),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(5)),
+                  child: isListning
+                      ? Center(
+                          child: Text('Listening...',
+                              style: TextStyle(color: Colors.green[700])))
+                      : TextField(
+                          controller: _messageController,
+                          maxLines: null,
+                          keyboardType: TextInputType.multiline,
+                          decoration: InputDecoration(
+                              hintText: 'Type a message',
+                              hintStyle: TextStyle(color: Colors.grey[500]),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 15, vertical: 10)),
+                          style: const TextStyle(color: Colors.black87)))),
           Container(
-            margin: const EdgeInsets.only(left: 8),
-            child: GestureDetector(
-              onTap: sendMessage,
-              onLongPress: () {
-                HapticFeedback.heavyImpact();
-                setState(() {
-                  isListning = true;
-                  startListning();
-                });
-                _showBottomSheet();
-              },
-              onLongPressEnd: (_) {
-                setState(() {
-                  isListning = false;
-                  stopListning();
-                });
-                Navigator.of(context).pop();
-              },
-              child: CircleAvatar(
-                backgroundColor: Colors.teal,
-                radius: 22,
-                child: Icon(
-                  isListning ? Icons.mic : Icons.send,
+              margin: const EdgeInsets.only(left: 8),
+              child: GestureDetector(
+                  onTap: sendMessage,
+                  onLongPress: () {
+                    HapticFeedback.heavyImpact();
+                    setState(() {
+                      isListning = true;
+                      startListning();
+                    });
+                    _showBottomSheet();
+                  },
+                  onLongPressEnd: (_) {
+                    setState(() {
+                      isListning = false;
+                      stopListning();
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: CircleAvatar(
+                      backgroundColor: Colors.teal,
+                      radius: 22,
+                      child: Icon(isListning ? Icons.mic : Icons.send,
+                          color: Colors.white, size: 22))))
+        ]));
+  }
+
+  void _showAttachmentOptions() {
+    showBottomSheet(
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+        context: context,
+        builder: (context) => _buildAttachmentSheet());
+  }
+
+  Widget _buildAttachmentSheet() {
+    return Container(
+        padding: const EdgeInsets.only(top: 20, left: 4, right: 4),
+        height: 325,
+        decoration: BoxDecoration(
+            color: Colors.grey[800],
+            borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+        child: Column(children: [
+          Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Container(
+                  height: 4,
+                  width: 50,
+                  decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2)))),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            _buildOptionTile(
+                icon: Icons.image,
+                label: 'Gallery',
+                color: Colors.green,
+                onTap: getImage),
+            _buildOptionTile(
+                icon: Icons.video_library,
+                label: 'Video',
+                color: Colors.purple,
+                onTap: getVideo),
+            _buildOptionTile(
+                icon: Icons.audiotrack,
+                label: 'Audio',
+                color: Colors.orange,
+                onTap: getAudio)
+          ]),
+          const SizedBox(height: 20),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            _buildOptionTile(
+                icon: Icons.file_present,
+                label: 'Document',
+                color: Colors.blue,
+                onTap: getDocs),
+            _buildOptionTile(
+                icon: Icons.mic,
+                label: 'Audio',
+                color: Colors.pink,
+                onTap: startListning)
+          ])
+        ]));
+  }
+
+  Widget _buildOptionTile({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+        onTap: () {
+          Navigator.of(context).pop();
+          onTap();
+        },
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          CircleAvatar(
+              backgroundColor: color.withOpacity(0.2),
+              radius: 40,
+              child: Icon(icon, color: color, size: 40)),
+          const SizedBox(height: 8),
+          Text(label,
+              style: const TextStyle(
                   color: Colors.white,
-                  size: 22,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20))
+        ]));
   }
 
   void _showBottomSheet() {

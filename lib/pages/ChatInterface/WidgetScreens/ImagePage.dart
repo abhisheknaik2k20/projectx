@@ -55,7 +55,7 @@ class _ImagePageState extends State<ImagePage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Image Details',
+                    widget.data['fileName'],
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -63,7 +63,6 @@ class _ImagePageState extends State<ImagePage>
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Example detail rows - modify as needed based on your data structure
                   _buildDetailRow(
                       'Sender :', widget.data['senderName'] ?? 'Unknown'),
                   _buildDetailRow('Type', 'Image'),

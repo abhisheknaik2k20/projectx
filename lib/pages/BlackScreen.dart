@@ -11,7 +11,7 @@ import 'package:SwiftTalk/pages/NotificationsPage/NotificationPage.dart';
 import 'package:SwiftTalk/pages/Profile.dart';
 import 'package:SwiftTalk/pages/QRScanner/QRScanner.dart';
 import 'package:SwiftTalk/pages/Chat_Bot.dart';
-import 'package:SwiftTalk/pages/Msg_Screen.dart';
+import 'package:SwiftTalk/pages/Main_Screen.dart';
 import 'package:provider/provider.dart';
 
 class BlackScreen extends StatefulWidget {
