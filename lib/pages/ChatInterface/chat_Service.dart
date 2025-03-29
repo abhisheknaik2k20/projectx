@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:SwiftTalk/API_KEYS.dart';
-import 'package:SwiftTalk/pages/ChatInterface/Message.dart';
 import 'package:path/path.dart' as path;
 
 class ChatService extends ChangeNotifier {
@@ -15,14 +14,15 @@ class ChatService extends ChangeNotifier {
     final String currentUserId = _auth.currentUser!.uid;
     final String currentUserEmail = _auth.currentUser!.email.toString();
     final Timestamp timestamp = Timestamp.now();
-    Message newMessage = Message(
-        senderName: _auth.currentUser!.displayName ?? '',
-        senderID: currentUserId,
-        senderEmail: currentUserEmail,
-        reciverId: reciverId,
-        recieveMessage: message,
-        timestamp: timestamp,
-        type: 'text');
+    Map<String, dynamic> newMessage = {
+      "senderName": _auth.currentUser!.displayName ?? '',
+      "senderId": currentUserId,
+      "senderEmail": currentUserEmail,
+      "reciverId": reciverId,
+      "recieveMessage": message,
+      "timestamp": timestamp,
+      "type": 'text'
+    };
 
     List<String> ids = [currentUserId, reciverId];
     ids.sort();
@@ -32,7 +32,7 @@ class ChatService extends ChangeNotifier {
           .collection('chat_Rooms')
           .doc(ChatroomID)
           .collection('messages')
-          .add(newMessage.toMap());
+          .add(newMessage);
     } catch (except) {
       print(except);
     }

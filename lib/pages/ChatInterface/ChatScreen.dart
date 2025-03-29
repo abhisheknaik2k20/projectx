@@ -1,18 +1,21 @@
 import 'dart:io';
 import 'package:SwiftTalk/pages/CallScreen/Call_Provider.dart';
 import 'package:SwiftTalk/pages/CallScreen/Call_Screen.dart';
+import 'package:SwiftTalk/pages/ChatInterface/WidgetScreens/ImagePage.dart';
+import 'package:SwiftTalk/pages/ChatInterface/WidgetScreens/VideoPlayer.dart';
 import 'package:SwiftTalk/pages/Profile.dart';
 import 'package:SwiftTalk/pages/Web_RTX_CALL_SCREEN/Screen1.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:SwiftTalk/pages/ChatInterface/Widget_list.dart';
 import 'package:SwiftTalk/pages/ChatInterface/Chat_Service.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class WhatsAppChatAppBar extends StatelessWidget
     implements PreferredSizeWidget {
@@ -520,5 +523,384 @@ class _ChatPageContentState extends State<ChatPageContent>
                         style: TextStyle(color: Colors.white))
                   ]));
         });
+  }
+}
+
+class WhatsAppMessageList extends StatelessWidget {
+  final String receiverUid, chatroomid;
+  final ScrollController _scrollController;
+  final FirebaseAuth _auth;
+  final ChatService _chatService;
+  final BuildContext context;
+  const WhatsAppMessageList(
+      {super.key,
+      required this.receiverUid,
+      required ScrollController scrollController,
+      required FirebaseAuth auth,
+      required ChatService chatService,
+      required this.context,
+      required this.chatroomid})
+      : _scrollController = scrollController,
+        _auth = auth,
+        _chatService = chatService;
+
+  @override
+  Widget build(BuildContext context) => StreamBuilder(
+      stream: _chatService.getMessages(receiverUid, _auth.currentUser!.uid),
+      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                Icon(Icons.chat, size: 100, color: Colors.teal[300]),
+                const SizedBox(height: 20),
+                Text('No messages yet',
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.bold)),
+                Text('Start a conversation',
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.bold))
+              ]));
+        }
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollController
+            .jumpTo(_scrollController.position.maxScrollExtent));
+        return ListView.builder(
+            controller: _scrollController,
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) =>
+                _buildMessageItem(snapshot.data!.docs[index]));
+      });
+
+  Widget _buildMessageItem(DocumentSnapshot document) {
+    Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+    bool isCurrentUser = data['senderId'] == _auth.currentUser!.uid;
+    String formattedTime =
+        DateFormat('hh:mm a').format((data['timestamp'] as Timestamp).toDate());
+
+    return GestureDetector(
+        onTap: () => _handleMediaTap(data),
+        onLongPress: () {
+          HapticFeedback.heavyImpact();
+          _showBottomSheetDetails(data, isCurrentUser, document);
+        },
+        child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            alignment:
+                isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+            child: Column(
+                crossAxisAlignment: isCurrentUser
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start,
+                children: [
+                  Container(
+                      constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.75),
+                      decoration: BoxDecoration(
+                          color: isCurrentUser
+                              ? Colors.green.shade100
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.grey.shade300,
+                                blurRadius: 2,
+                                offset: const Offset(1, 1))
+                          ]),
+                      padding: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (!isCurrentUser)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Text(data['senderName'],
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green.shade800,
+                                        fontSize: 12)),
+                              ),
+                            _getMessageContent(data),
+                            const SizedBox(height: 4),
+                            Align(
+                                alignment: Alignment.bottomRight,
+                                child: Text(formattedTime,
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey.shade600)))
+                          ]))
+                ])));
+  }
+
+  Widget _getMessageContent(Map<String, dynamic> data) {
+    switch (data['type']) {
+      case 'text':
+        return Text(data['message'], style: const TextStyle(fontSize: 16));
+      case 'Image':
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: CachedNetworkImage(
+                  imageUrl: data['message'],
+                  placeholder: (context, url) =>
+                      const CircularProgressIndicator(),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
+                  width: 250,
+                  height: 250,
+                  fit: BoxFit.cover))
+        ]);
+      case 'Video':
+      case 'Audio':
+      case 'PDF':
+        final Map<String, List> mediaConfig = {
+          'Video': [
+            Icons.play_circle_fill,
+            Colors.purple,
+            'Video',
+            Colors.purple.shade100
+          ],
+          'Audio': [
+            Icons.audiotrack,
+            Colors.orange,
+            'Audio',
+            Colors.yellow.shade100
+          ],
+          'PDF': [
+            Icons.picture_as_pdf,
+            Colors.red,
+            'PDF Document',
+            Colors.red.shade100
+          ]
+        };
+        final config = mediaConfig[data['type']]!;
+        return Container(
+            decoration: BoxDecoration(
+                color: config[3], borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.all(10),
+            child: Row(children: [
+              Icon(config[0], color: config[1], size: 50),
+              const SizedBox(width: 10),
+              Flexible(
+                  child: Text(config[2],
+                      style: TextStyle(
+                          color: data['type'] == 'Video'
+                              ? Colors.purple
+                              : Colors.black87,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 30),
+                      overflow: TextOverflow.ellipsis))
+            ]));
+      default:
+        return Text(data['message'] ?? 'Unsupported message type',
+            style: const TextStyle(fontSize: 16));
+    }
+  }
+
+  void _handleMediaTap(Map<String, dynamic> data) {
+    switch (data['type']) {
+      case 'Image':
+        Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => ImagePage(data: data)));
+        break;
+      case 'Video':
+      case 'Audio':
+        Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => VideoPlayerView(data: data)));
+        break;
+      case 'PDF':
+        Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => SfPdfViewer.network(data['message'])));
+        break;
+    }
+  }
+
+  void _showBottomSheetDetails(Map<String, dynamic> data, bool isCurrentUser,
+      DocumentSnapshot document) {
+    showBottomSheet(
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(40), topRight: Radius.circular(40))),
+        context: context,
+        builder: (context) => Container(
+            padding: const EdgeInsets.all(20),
+            height: data['type'] == 'text' ? 500 : 550,
+            decoration: BoxDecoration(
+                color: Colors.grey.shade900,
+                borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(40),
+                    topRight: Radius.circular(40))),
+            child: Column(children: [
+              Container(
+                  height: 2,
+                  width: 100,
+                  decoration: const BoxDecoration(color: Colors.white)),
+              const SizedBox(height: 20),
+              const Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+                Text('Details',
+                    style: TextStyle(color: Colors.white, fontSize: 40))
+              ]),
+              const SizedBox(height: 20),
+              if (data['type'] != 'text')
+                _infoRow(Icons.info, 'File Name', data['fileName']),
+              const SizedBox(height: 20),
+              _infoRow(
+                  Icons.calendar_month,
+                  DateFormat('MMMM-dd').format(data['timestamp'].toDate()),
+                  DateFormat('EEEE yyyy').format(data['timestamp'].toDate())),
+              const SizedBox(height: 20),
+              _infoRow(_getTypeIcon(data['type']), 'Type',
+                  data['type'] ?? 'Unknown'),
+              const SizedBox(height: 20),
+              if (data['type'] != 'text')
+                _infoRow(Icons.backup, 'BackUp URL', data['message'], true),
+              const SizedBox(height: 20),
+              Padding(
+                  padding: const EdgeInsets.only(left: 5, right: 5, bottom: 10),
+                  child: Container(
+                      height: 2,
+                      decoration: BoxDecoration(color: Colors.grey.shade700))),
+              const SizedBox(height: 20),
+              _buildButtons(data, isCurrentUser, document)
+            ])));
+  }
+
+  IconData _getTypeIcon(String? type) {
+    switch (type) {
+      case 'Image':
+        return Icons.image;
+      case 'Video':
+        return Icons.videocam;
+      case 'Audio':
+        return Icons.audio_file;
+      default:
+        return Icons.textsms;
+    }
+  }
+
+  Widget _infoRow(IconData icon, String title, String value,
+          [bool isUrl = false]) =>
+      Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+        Icon(icon, size: 50, color: Colors.teal.shade400),
+        const SizedBox(width: 10),
+        Flexible(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title,
+              style: const TextStyle(fontSize: 25, color: Colors.white)),
+          isUrl
+              ? GestureDetector(
+                  onTap: () {},
+                  child: Text(value,
+                      style:
+                          TextStyle(fontSize: 18, color: Colors.teal.shade400),
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis))
+              : Text(value,
+                  style: TextStyle(fontSize: 18, color: Colors.teal.shade400))
+        ]))
+      ]);
+
+  Widget _buildButtons(Map<String, dynamic> data, bool isCurrentUser,
+      DocumentSnapshot document) {
+    if (data['type'] == 'text' && isCurrentUser) {
+      return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        _actionButton(Icons.delete, "Delete?", () => _deleteMessage(document)),
+        _actionButton(Icons.edit, "Edit?", () {
+          Navigator.of(context).pop();
+          showEditBox(document);
+        })
+      ]);
+    } else if (data['type'] != 'text') {
+      return isCurrentUser
+          ? Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+              _actionButton(Icons.download, "Save?", () {}),
+              _actionButton(
+                  Icons.delete, "Delete?", () => _deleteMessage(document)),
+            ])
+          : Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+              _actionButton(Icons.download, "Save?", () {}),
+            ]);
+    }
+    return Container();
+  }
+
+  Widget _actionButton(IconData icon, String label, VoidCallback onPressed) =>
+      Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        IconButton(
+            onPressed: onPressed,
+            icon: Icon(icon, size: 40, color: Colors.teal.shade500)),
+        Text(label, style: const TextStyle(color: Colors.white, fontSize: 15))
+      ]);
+
+  Future<void> _deleteMessage(DocumentSnapshot document) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('chat_Rooms')
+          .doc(chatroomid)
+          .collection('messages')
+          .doc(document.id)
+          .update({'message': 'Message Deleted', 'type': null});
+      Navigator.of(context).pop();
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  void showEditBox(DocumentSnapshot document) async {
+    TextEditingController textController = TextEditingController();
+    await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+                backgroundColor: Colors.grey.shade900,
+                title: const Text('Enter The New Message',
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
+                actions: <Widget>[
+                  TextFormField(
+                      controller: textController,
+                      style: const TextStyle(color: Colors.white),
+                      cursorColor: Colors.teal,
+                      decoration: InputDecoration(
+                          hintText: ' Enter Message Here',
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
+                          focusedBorder: const UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.white)))),
+                  const SizedBox(height: 10),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    ElevatedButton(
+                        onPressed: () async {
+                          if (textController.text.isNotEmpty) {
+                            Navigator.of(context).pop();
+                            try {
+                              await FirebaseFirestore.instance
+                                  .collection('chat_Rooms')
+                                  .doc(chatroomid)
+                                  .collection('messages')
+                                  .doc(document.id)
+                                  .update({
+                                'message': textController.text,
+                                'type': 'text',
+                                'edit': true
+                              });
+                            } catch (e) {
+                              print(e);
+                            }
+                          }
+                        },
+                        child: Text('Done',
+                            style: TextStyle(
+                                fontSize: 20, color: Colors.teal.shade500)))
+                  ])
+                ]));
   }
 }
