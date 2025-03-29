@@ -186,7 +186,6 @@ class _MessagesPageState extends State<MessagesPage> {
           MaterialPageRoute(
             builder: (context) => ChatPage(
               receiverName: userData['username'] ?? 'Unknown',
-              receiverEmail: userData['email'] ?? '',
               receiverUid: userData['uid'] ?? '',
             ),
           ),
@@ -250,7 +249,6 @@ class MessageTileTwo extends StatelessWidget {
           Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => ChatPage(
                   receiverName: messageData.sendname,
-                  receiverEmail: messageData.email,
                   receiverUid: messageData.uid)));
         },
         child: Padding(

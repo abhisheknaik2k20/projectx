@@ -19,14 +19,12 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class WhatsAppChatAppBar extends StatelessWidget
     implements PreferredSizeWidget {
-  final String receiverEmail;
   final String receiverUid;
   final String receiverName;
   final String chatroomID;
 
   const WhatsAppChatAppBar(
       {super.key,
-      required this.receiverEmail,
       required this.receiverUid,
       required this.receiverName,
       required this.chatroomID});
@@ -135,12 +133,10 @@ class WhatsAppChatAppBar extends StatelessWidget
 }
 
 class ChatPage extends StatelessWidget {
-  final String receiverEmail;
   final String receiverUid;
   final String receiverName;
   const ChatPage({
     super.key,
-    required this.receiverEmail,
     required this.receiverUid,
     required this.receiverName,
   });
@@ -152,28 +148,25 @@ class ChatPage extends StatelessWidget {
     }
     return Scaffold(
         appBar: WhatsAppChatAppBar(
-            receiverEmail: receiverEmail,
             receiverUid: receiverUid,
             receiverName: receiverName,
             chatroomID: ([FirebaseAuth.instance.currentUser!.uid, receiverUid]
                   ..sort())
                 .join("_")),
         body: ChatPageContent(
-            receiverUid: receiverUid,
-            receiverName: receiverName,
-            receiverEmail: receiverEmail));
+          receiverUid: receiverUid,
+          receiverName: receiverName,
+        ));
   }
 }
 
 class ChatPageContent extends StatefulWidget {
   final String receiverUid;
   final String receiverName;
-  final String receiverEmail;
 
   const ChatPageContent({
     super.key,
     required this.receiverUid,
-    required this.receiverEmail,
     required this.receiverName,
   });
 
@@ -266,7 +259,8 @@ class _ChatPageContentState extends State<ChatPageContent>
     if (_messageController.text.isNotEmpty) {
       String textmessage = _messageController.text;
       _messageController.clear();
-      await _chatService.SendMessage(widget.receiverUid, textmessage);
+      await _chatService.SendMessage(
+          reciverId: widget.receiverUid, message: textmessage);
     }
   }
 
@@ -282,9 +276,9 @@ class _ChatPageContentState extends State<ChatPageContent>
           result.files.single.extension?.toLowerCase() == 'gif') {
         imageFile = file;
         S3UploadService().uploadAndSendImage(
-            imageFile: imageFile!,
-            receiverUid: widget.receiverUid,
-            receiverEmail: widget.receiverEmail);
+          imageFile: imageFile!,
+          receiverUid: widget.receiverUid,
+        );
       } else {
         print("Unsupported file type");
       }
@@ -301,9 +295,9 @@ class _ChatPageContentState extends State<ChatPageContent>
           result.files.single.extension?.toLowerCase() == 'avi') {
         videoFile = file;
         S3UploadService().uploadAndSendVideo(
-            videoFile: videoFile!,
-            receiverUid: widget.receiverUid,
-            receiverEmail: widget.receiverEmail);
+          videoFile: videoFile!,
+          receiverUid: widget.receiverUid,
+        );
       }
     }
   }
@@ -320,9 +314,9 @@ class _ChatPageContentState extends State<ChatPageContent>
           result.files.single.extension?.toLowerCase() == 'aac') {
         audioFile = file;
         S3UploadService().uploadAndSendAudio(
-            audioFile: audioFile!,
-            receiverUid: widget.receiverUid,
-            receiverEmail: widget.receiverEmail);
+          audioFile: audioFile!,
+          receiverUid: widget.receiverUid,
+        );
       }
     }
   }
@@ -336,9 +330,9 @@ class _ChatPageContentState extends State<ChatPageContent>
       if (result.files.single.extension?.toLowerCase() == 'pdf') {
         docFile = file;
         S3UploadService().uploadAndSendPDF(
-            pdfFile: docFile!,
-            receiverUid: widget.receiverUid,
-            receiverEmail: widget.receiverEmail);
+          pdfFile: docFile!,
+          receiverUid: widget.receiverUid,
+        );
       }
     }
   }

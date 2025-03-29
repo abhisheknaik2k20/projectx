@@ -1,3 +1,4 @@
+import 'package:SwiftTalk/pages/ChatInterface/ChatScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -44,7 +45,7 @@ class NotificationPage extends StatelessWidget {
               SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
                 final document = snapshot.data!.docs[index];
-                return _buildNotificationItem(document);
+                return _buildNotificationItem(document, context);
               }, childCount: snapshot.data!.docs.length))
             else
               SliverFillRemaining(child: _buildEmptyState())
@@ -69,7 +70,8 @@ class NotificationPage extends StatelessWidget {
     ]));
   }
 
-  Widget _buildNotificationItem(DocumentSnapshot document) {
+  Widget _buildNotificationItem(
+      DocumentSnapshot document, BuildContext context) {
     final data = document.data() as Map<String, dynamic>;
 
     final typeIcons = {
@@ -95,6 +97,10 @@ class NotificationPage extends StatelessWidget {
             .doc(document.id)
             .delete(),
         child: ListTile(
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => ChatPage(
+                    receiverUid: data['senderId'],
+                    receiverName: data['senderName']))),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading:

@@ -12,7 +12,9 @@ class ChatService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<void> updateNotifications(
-      {required String reciverId, required message, required type}) async {
+      {required String reciverId,
+      required String message,
+      required type}) async {
     await _firestore
         .collection('users')
         .doc(reciverId)
@@ -27,7 +29,8 @@ class ChatService extends ChangeNotifier {
     });
   }
 
-  Future<void> SendMessage(String reciverId, String message) async {
+  Future<void> SendMessage(
+      {required String reciverId, required String message}) async {
     final String currentUserId = _auth.currentUser!.uid;
     final String currentUserEmail = _auth.currentUser!.email.toString();
     final Timestamp timestamp = Timestamp.now();
@@ -148,10 +151,10 @@ class S3UploadService {
   String _constructS3Url(String objectKey) =>
       'https://${_credentialsConfig.bucketName}.s3.${_credentialsConfig.region}.amazonaws.com/$objectKey';
 
-  Future<void> uploadAndSendVideo(
-      {required File videoFile,
-      required String receiverUid,
-      required String receiverEmail}) async {
+  Future<void> uploadAndSendVideo({
+    required File videoFile,
+    required String receiverUid,
+  }) async {
     try {
       final videoUrl = await uploadFileToS3(
           file: videoFile,
@@ -179,10 +182,10 @@ class S3UploadService {
     }
   }
 
-  Future<void> uploadAndSendAudio(
-      {required File audioFile,
-      required String receiverUid,
-      required String receiverEmail}) async {
+  Future<void> uploadAndSendAudio({
+    required File audioFile,
+    required String receiverUid,
+  }) async {
     try {
       final audioUrl = await uploadFileToS3(
           file: audioFile,
@@ -208,10 +211,10 @@ class S3UploadService {
     }
   }
 
-  Future<void> uploadAndSendPDF(
-      {required File pdfFile,
-      required String receiverUid,
-      required String receiverEmail}) async {
+  Future<void> uploadAndSendPDF({
+    required File pdfFile,
+    required String receiverUid,
+  }) async {
     try {
       final pdfUrl = await uploadFileToS3(
           file: pdfFile,
@@ -333,7 +336,6 @@ class S3UploadService {
   Future<void> uploadAndSendImage({
     required File imageFile,
     required String receiverUid,
-    required String receiverEmail,
   }) async {
     try {
       final imageUrl = await uploadImageToS3(imageFile: imageFile);
