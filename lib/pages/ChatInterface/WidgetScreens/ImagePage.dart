@@ -20,9 +20,7 @@ class _ImagePageState extends State<ImagePage>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
+        vsync: this, duration: const Duration(milliseconds: 300));
   }
 
   @override
@@ -36,8 +34,7 @@ class _ImagePageState extends State<ImagePage>
         context: context,
         backgroundColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         builder: (context) => Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
@@ -114,11 +111,10 @@ class _ImagePageState extends State<ImagePage>
                 child: PhotoViewGallery.builder(
                     itemCount: 1,
                     builder: (_, __) => PhotoViewGalleryPageOptions(
-                          imageProvider: CachedNetworkImageProvider(
-                              widget.data['message']),
-                          minScale: PhotoViewComputedScale.contained,
-                          maxScale: PhotoViewComputedScale.covered * 2,
-                        ),
+                        imageProvider:
+                            CachedNetworkImageProvider(widget.data['message']),
+                        minScale: PhotoViewComputedScale.contained,
+                        maxScale: PhotoViewComputedScale.covered * 2),
                     backgroundDecoration:
                         const BoxDecoration(color: Colors.black),
                     scrollPhysics: const BouncingScrollPhysics()))));

@@ -165,11 +165,10 @@ class S3UploadService {
     }
   }
 
-  Future<void> uploadAndSendAudio({
-    required File audioFile,
-    required String receiverUid,
-    required String receiverEmail,
-  }) async {
+  Future<void> uploadAndSendAudio(
+      {required File audioFile,
+      required String receiverUid,
+      required String receiverEmail}) async {
     try {
       final audioUrl = await uploadFileToS3(
           file: audioFile,
@@ -179,11 +178,10 @@ class S3UploadService {
 
       if (audioUrl != null) {
         await sendFileMessage(
-          fileName: audioFile.path.split('/').last,
-          fileUrl: audioUrl,
-          receiverUid: receiverUid,
-          fileType: 'Audio',
-        );
+            fileName: audioFile.path.split('/').last,
+            fileUrl: audioUrl,
+            receiverUid: receiverUid,
+            fileType: 'Audio');
       } else {
         debugPrint('Audio upload failed');
       }
@@ -192,11 +190,10 @@ class S3UploadService {
     }
   }
 
-  Future<void> uploadAndSendPDF({
-    required File pdfFile,
-    required String receiverUid,
-    required String receiverEmail,
-  }) async {
+  Future<void> uploadAndSendPDF(
+      {required File pdfFile,
+      required String receiverUid,
+      required String receiverEmail}) async {
     try {
       final pdfUrl = await uploadFileToS3(
           file: pdfFile,
@@ -206,11 +203,10 @@ class S3UploadService {
 
       if (pdfUrl != null) {
         await sendFileMessage(
-          fileName: pdfFile.path.split('/').last,
-          fileUrl: pdfUrl,
-          receiverUid: receiverUid,
-          fileType: 'PDF',
-        );
+            fileName: pdfFile.path.split('/').last,
+            fileUrl: pdfUrl,
+            receiverUid: receiverUid,
+            fileType: 'PDF');
       } else {
         debugPrint('PDF upload failed');
       }
@@ -219,12 +215,11 @@ class S3UploadService {
     }
   }
 
-  Future<String?> uploadFileToS3({
-    required File file,
-    required String fileType,
-    List<String> allowedExtensions = const [],
-    int maxFileSizeMB = 10,
-  }) async {
+  Future<String?> uploadFileToS3(
+      {required File file,
+      required String fileType,
+      List<String> allowedExtensions = const [],
+      int maxFileSizeMB = 10}) async {
     try {
       if (!await file.exists()) {
         debugPrint('File does not exist');
@@ -320,13 +315,11 @@ class S3UploadService {
   }) async {
     try {
       final imageUrl = await uploadImageToS3(imageFile: imageFile);
-
       if (imageUrl != null) {
         await sendImageMessage(
-          fileName: imageFile.path.split("/").last,
-          imageUrl: imageUrl,
-          receiverUid: receiverUid,
-        );
+            fileName: imageFile.path.split("/").last,
+            imageUrl: imageUrl,
+            receiverUid: receiverUid);
       } else {
         debugPrint('Image upload failed');
       }
