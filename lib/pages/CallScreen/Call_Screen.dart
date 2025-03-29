@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:SwiftTalk/pages/API_Call_Screen/Screen1.dart';
+import 'package:SwiftTalk/pages/Web_RTX_CALL_SCREEN/Screen1.dart';
 import 'package:vibration/vibration.dart';
 
 class CallScreen extends StatefulWidget {
@@ -57,14 +57,11 @@ class _CallScreenState extends State<CallScreen> {
             .doc(_uid)
             .snapshots(),
         builder: (context, snapshot) {
-          // Handle different states of the snapshot
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(color: Colors.white),
             );
           }
-
-          // Safely extract caller name
           String callerName = 'Unknown Caller';
           bool hasCallData = false;
 

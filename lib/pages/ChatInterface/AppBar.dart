@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
-import 'package:SwiftTalk/pages/API_Call_Screen/Screen1.dart';
+import 'package:SwiftTalk/pages/Web_RTX_CALL_SCREEN/Screen1.dart';
 import 'dart:convert';
 
 import 'package:SwiftTalk/pages/Profile.dart';

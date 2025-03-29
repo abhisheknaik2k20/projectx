@@ -31,9 +31,8 @@ class _BlackScreenState extends State<BlackScreen> {
     super.dispose();
   }
 
-  void _navigateTo(Widget page) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => page));
-  }
+  void _navigateTo(Widget page) =>
+      Navigator.push(context, MaterialPageRoute(builder: (context) => page));
 
   List<ListTile> get _drawerItems => [
         _buildDrawerItem(
@@ -56,11 +55,10 @@ class _BlackScreenState extends State<BlackScreen> {
       ];
 
   ListTile _buildDrawerItem(
-      {required IconData icon,
-      required String title,
-      required VoidCallback onTap}) {
-    return ListTile(onTap: onTap, leading: Icon(icon), title: Text(title));
-  }
+          {required IconData icon,
+          required String title,
+          required VoidCallback onTap}) =>
+      ListTile(onTap: onTap, leading: Icon(icon), title: Text(title));
 
   Widget _buildDrawerContent() {
     return SafeArea(
@@ -96,9 +94,7 @@ class _BlackScreenState extends State<BlackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Use the provider to access call status
     final callStatusProvider = context.watch<CallStatusProvider>();
-
     return AdvancedDrawer(
       backdrop: _buildDrawerBackdrop(),
       controller: _drawerController,
@@ -149,47 +145,37 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     await _reloadUser();
     _pageController.addListener(() {
       if (mounted) {
-        setState(() {
-          _selectedIndex = _pageController.page!.round();
-        });
+        setState(() => _selectedIndex = _pageController.page!.round());
       }
     });
   }
 
-  Future<void> _requestContactsPermission() async {
-    await Permission.contacts.request();
-  }
+  Future<void> _requestContactsPermission() async =>
+      await Permission.contacts.request();
 
   Future<void> _reloadUser() async {
     try {
       final user = _auth.currentUser;
-      if (user != null) {
-        await user.reload();
-        await user.getIdToken();
-      }
+      if (user == null) return;
+      await user.reload();
+      await user.getIdToken();
     } catch (_) {}
-  }
-
-  void _setStatus(String status) {
-    _db
-        .collection('users')
-        .doc(_auth.currentUser?.uid)
-        .update({'status': status});
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _setStatus(state == AppLifecycleState.resumed
-        ? 'Online'
-        : 'Last seen ${DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now())}');
     super.didChangeAppLifecycleState(state);
+    _db.collection('users').doc(_auth.currentUser?.uid).update({
+      'status': state == AppLifecycleState.resumed
+          ? 'Online'
+          : 'Last seen ${DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now())}'
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
-
     super.dispose();
   }
 
@@ -202,9 +188,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             controller: _pageController,
             itemCount: _pages.length,
             onPageChanged: (index) {
-              if (mounted) {
-                setState(() => _selectedIndex = index);
-              }
+              if (mounted) setState(() => _selectedIndex = index);
             },
             itemBuilder: (context, index) => _pages[index]),
         bottomNavigationBar: Container(
@@ -218,9 +202,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       _pageController.animateToPage(index,
                           duration: const Duration(milliseconds: 500),
                           curve: Curves.ease);
-                      if (mounted) {
-                        setState(() => _selectedIndex = index);
-                      }
+                      if (mounted) setState(() => _selectedIndex = index);
                     },
                     backgroundColor: Colors.grey.shade900,
                     color: Colors.white,
