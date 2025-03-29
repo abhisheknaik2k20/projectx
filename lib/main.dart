@@ -9,16 +9,9 @@ import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.android,
-  );
-  //FirebaseApi().initNotifications();
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => CallStatusProvider(),
-      child: MyApp(),
-    ),
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.android);
+  runApp(ChangeNotifierProvider(
+      create: (context) => CallStatusProvider(), child: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
@@ -30,25 +23,18 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SwiftTalk',
-      theme: ThemeData(
-        useMaterial3: true,
-        appBarTheme: AppBarTheme(color: Colors.teal.shade500),
-      ),
-      debugShowCheckedModeBanner: false,
-      home: StreamBuilder(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, snapshot) => switch (snapshot) {
-                AsyncSnapshot(hasData: true) => const BlackScreen(),
-                _ => const LoginSignupScreen()
-              }),
-    );
+        title: 'SwiftTalk',
+        theme: ThemeData(
+            useMaterial3: true,
+            appBarTheme: AppBarTheme(color: Colors.teal.shade500)),
+        debugShowCheckedModeBanner: false,
+        home: StreamBuilder(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) => switch (snapshot) {
+                  AsyncSnapshot(hasData: true) => const BlackScreen(),
+                  _ => const LoginSignupScreen()
+                }));
   }
 }
