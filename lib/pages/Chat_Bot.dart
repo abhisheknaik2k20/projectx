@@ -5,7 +5,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
-import 'package:projectx/API_KEYS.dart';
+import 'package:SwiftTalk/API_KEYS.dart';
 
 class ChatGPTScreen extends StatefulWidget {
   const ChatGPTScreen({super.key});
@@ -65,19 +65,13 @@ class _ChatGPTScreenState extends State<ChatGPTScreen> {
 
   Future<void> _sendMessage() async {
     final String messageText = _messageController.text.trim();
-
-    // Check if there's no text and no image
     if (messageText.isEmpty && _imageFile == null) return;
 
-    // Clear input and show loading
     _messageController.clear();
     setState(() {
-      // Add user's text message
       if (messageText.isNotEmpty) {
         _messages.add(ChatMessage(text: messageText, isUser: true));
       }
-
-      // Add image if present
       if (_imageFile != null) {
         _messages.add(ChatMessage(
           text: "Image uploaded",
@@ -85,47 +79,35 @@ class _ChatGPTScreenState extends State<ChatGPTScreen> {
           imageFile: _imageFile,
         ));
       }
-
       _isLoading = true;
     });
 
-    // Scroll to bottom
     _scrollToBottom();
 
     try {
       final chatSession = _model.startChat();
-
       List<Part> parts = [];
-
       if (messageText.isNotEmpty) {
         parts.add(TextPart(messageText));
       }
-
       if (_imageFile != null) {
         final imageBytes = await _imageFile!.readAsBytes();
         parts.add(DataPart('image/jpeg', imageBytes));
       }
       final response = await chatSession.sendMessage(Content.multi(parts));
-
       setState(() {
-        _messages.add(
-          ChatMessage(
-            text: response.text ?? "I'm not sure how to respond.",
-            isUser: false,
-          ),
-        );
+        _messages.add(ChatMessage(
+          text: response.text ?? "I'm not sure how to respond.",
+          isUser: false,
+        ));
         _isLoading = false;
-
         _imageFile = null;
       });
     } catch (e) {
       setState(() {
-        _messages.add(
-          ChatMessage(
+        _messages.add(ChatMessage(
             text: "Sorry, there was an error processing your request: $e",
-            isUser: false,
-          ),
-        );
+            isUser: false));
         _isLoading = false;
       });
     }

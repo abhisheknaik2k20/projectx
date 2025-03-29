@@ -1,11 +1,9 @@
-// ignore_for_file: non_constant_identifier_names
-
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:projectx/pages/BlackScreen.dart';
-import 'package:projectx/pages/QRScanner/SuccessLoading.dart';
-import 'package:projectx/pages/QRScanner/SuccessPage.dart';
+import 'package:SwiftTalk/pages/BlackScreen.dart';
+import 'package:SwiftTalk/pages/QRScanner/SuccessPage.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 class QRScanner extends StatefulWidget {
@@ -35,7 +33,6 @@ class _QRScannerState extends State<QRScanner> {
   @override
   void reassemble() {
     super.reassemble();
-    // This is crucial for handling platform view recreations
     if (controller != null) {
       if (Theme.of(context).platform == TargetPlatform.android) {
         controller!.pauseCamera();
@@ -231,8 +228,8 @@ class _QRScannerState extends State<QRScanner> {
       await controller.pauseCamera();
 
       if (scanData.code != null) {
-        if (scanData.code!.endsWith('projectx-223eb.web.app')) {
-          String ID = scanData.code!.replaceAll('projectx-223eb.web.app', '');
+        if (scanData.code!.endsWith('SwiftTalk-223eb.web.app')) {
+          String ID = scanData.code!.replaceAll('SwiftTalk-223eb.web.app', '');
           await _processQRCode(ID);
         } else {
           _showWrongQR();
@@ -397,6 +394,61 @@ class _QRScannerState extends State<QRScanner> {
             );
           }
         },
+      ),
+    );
+  }
+}
+
+class SuccessLoading extends StatefulWidget {
+  final String resultid;
+  const SuccessLoading({super.key, required this.resultid});
+
+  @override
+  State<SuccessLoading> createState() => _SuccessLoadingState();
+}
+
+class _SuccessLoadingState extends State<SuccessLoading> {
+  @override
+  void initState() {
+    super.initState();
+    Timer(
+      const Duration(seconds: 5),
+      () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => Success(
+                    resultid: widget.resultid,
+                  )),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey.shade400,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_download,
+              size: 100,
+              color: Colors.grey.shade800,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Fetching Details.....',
+              style: TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.w400,
+                color: Colors.grey.shade800,
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

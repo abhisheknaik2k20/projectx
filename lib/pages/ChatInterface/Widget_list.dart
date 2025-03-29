@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:projectx/pages/ChatInterface/WidgetScreens/ImagePage.dart';
-import 'package:projectx/pages/ChatInterface/WidgetScreens/VideoPlayer.dart';
-import 'package:projectx/pages/ChatInterface/chat_Service.dart';
+import 'package:SwiftTalk/pages/ChatInterface/WidgetScreens/ImagePage.dart';
+import 'package:SwiftTalk/pages/ChatInterface/WidgetScreens/VideoPlayer.dart';
+import 'package:SwiftTalk/pages/ChatInterface/Chat_Service.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class WhatsAppMessageList extends StatelessWidget {

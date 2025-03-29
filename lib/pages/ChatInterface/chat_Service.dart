@@ -4,8 +4,8 @@ import 'package:aws_storage_service/aws_storage_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:projectx/API_KEYS.dart';
-import 'package:projectx/pages/ChatInterface/Message.dart';
+import 'package:SwiftTalk/API_KEYS.dart';
+import 'package:SwiftTalk/pages/ChatInterface/Message.dart';
 import 'package:path/path.dart' as path;
 
 class ChatService extends ChangeNotifier {

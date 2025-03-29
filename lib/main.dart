@@ -1,10 +1,12 @@
+import 'package:SwiftTalk/pages/CallScreen/Call_Provider.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:projectx/firebase_options.dart';
-import 'package:projectx/pages/BlackScreen.dart';
-import 'package:projectx/pages/Login/login_screen.dart';
+import 'package:SwiftTalk/firebase_options.dart';
+import 'package:SwiftTalk/pages/BlackScreen.dart';
+import 'package:SwiftTalk/pages/Login/login_screen.dart';
+import 'package:provider/provider.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -17,7 +19,12 @@ void main() async {
     options: DefaultFirebaseOptions.android,
   );
   //FirebaseApi().initNotifications();
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => CallStatusProvider(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -36,7 +43,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Project-X',
+      title: 'SwiftTalk',
       navigatorKey: navigatorKey,
       theme: ThemeData(
         useMaterial3: true,

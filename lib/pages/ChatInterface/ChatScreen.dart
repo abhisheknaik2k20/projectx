@@ -1,10 +1,13 @@
 import 'dart:io';
+import 'package:SwiftTalk/pages/CallScreen/Call_Provider.dart';
+import 'package:SwiftTalk/pages/CallScreen/Call_Screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:projectx/pages/ChatInterface/AppBar.dart';
-import 'package:projectx/pages/ChatInterface/Widget_list.dart';
-import 'package:projectx/pages/ChatInterface/chat_Service.dart';
+import 'package:SwiftTalk/pages/ChatInterface/AppBar.dart';
+import 'package:SwiftTalk/pages/ChatInterface/Widget_list.dart';
+import 'package:SwiftTalk/pages/ChatInterface/Chat_Service.dart';
+import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,6 +25,10 @@ class ChatPage extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    final callStatusProvider = context.watch<CallStatusProvider>();
+    if (callStatusProvider.isCallActive) {
+      return const CallScreen();
+    }
     return Scaffold(
         appBar: WhatsAppChatAppBar(
             receiverEmail: receiverEmail,

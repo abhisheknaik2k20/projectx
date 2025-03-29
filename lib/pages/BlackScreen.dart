@@ -1,3 +1,4 @@
+import 'package:SwiftTalk/pages/CallScreen/Call_Provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -5,12 +6,13 @@ import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:projectx/pages/CallScreen/callScreen.dart';
-import 'package:projectx/pages/NotificationsPage/NotificationPage.dart';
-import 'package:projectx/pages/Profile.dart';
-import 'package:projectx/pages/QRScanner/QRScanner.dart';
-import 'package:projectx/pages/chatgpt.dart';
-import 'package:projectx/pages/messages.dart';
+import 'package:SwiftTalk/pages/CallScreen/Call_Screen.dart';
+import 'package:SwiftTalk/pages/NotificationsPage/NotificationPage.dart';
+import 'package:SwiftTalk/pages/Profile.dart';
+import 'package:SwiftTalk/pages/QRScanner/QRScanner.dart';
+import 'package:SwiftTalk/pages/Chat_Bot.dart';
+import 'package:SwiftTalk/pages/Msg_Screen.dart';
+import 'package:provider/provider.dart';
 
 class BlackScreen extends StatefulWidget {
   const BlackScreen({super.key});
@@ -21,7 +23,6 @@ class BlackScreen extends StatefulWidget {
 
 class _BlackScreenState extends State<BlackScreen> {
   final _drawerController = AdvancedDrawerController();
-  final _db = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
   @override
@@ -95,21 +96,19 @@ class _BlackScreenState extends State<BlackScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Use the provider to access call status
+    final callStatusProvider = context.watch<CallStatusProvider>();
+
     return AdvancedDrawer(
-        backdrop: _buildDrawerBackdrop(),
-        controller: _drawerController,
-        animationCurve: Curves.easeInOut,
-        animationDuration: const Duration(milliseconds: 300),
-        drawer: _buildDrawerContent(),
-        child: StreamBuilder<DocumentSnapshot>(
-            stream:
-                _db.collection('users').doc(_auth.currentUser!.uid).snapshots(),
-            builder: (context, snapshot) {
-              final isCallActive = snapshot.data?.get('isCall') ?? false;
-              return isCallActive
-                  ? const CallScreen()
-                  : HomePage(dc: _drawerController);
-            }));
+      backdrop: _buildDrawerBackdrop(),
+      controller: _drawerController,
+      animationCurve: Curves.easeInOut,
+      animationDuration: const Duration(milliseconds: 300),
+      drawer: _buildDrawerContent(),
+      child: callStatusProvider.isCallActive
+          ? const CallScreen()
+          : HomePage(dc: _drawerController),
+    );
   }
 }
 

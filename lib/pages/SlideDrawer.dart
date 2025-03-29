@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:projectx/pages/Profile.dart';
+import 'package:SwiftTalk/pages/Profile.dart';
 
 class DrawerSlide extends StatefulWidget {
   const DrawerSlide({super.key});

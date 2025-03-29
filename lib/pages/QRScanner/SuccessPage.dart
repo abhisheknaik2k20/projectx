@@ -1,13 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:projectx/pages/QRScanner/QRScanner.dart';
+import 'package:SwiftTalk/pages/QRScanner/QRScanner.dart';
 import 'package:intl/intl.dart';
 
-// ignore: must_be_immutable
 class Success extends StatefulWidget {
-  String resultid;
-  Success({super.key, required this.resultid});
+  final String resultid;
+  const Success({super.key, required this.resultid});
 
   @override
   State<Success> createState() => _SuccessState();

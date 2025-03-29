@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:projectx/pages/API_Call_Screen/Screen1.dart';
+import 'package:SwiftTalk/pages/API_Call_Screen/Screen1.dart';
 import 'package:vibration/vibration.dart';
 
 class CallScreen extends StatefulWidget {

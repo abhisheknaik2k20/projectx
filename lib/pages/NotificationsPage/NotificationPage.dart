@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
 import 'package:intl/intl.dart';
-import 'package:projectx/pages/ChatInterface/chat_Service.dart';
+import 'package:SwiftTalk/pages/ChatInterface/Chat_Service.dart';
 
 class NotificationPage extends StatelessWidget {
   final AdvancedDrawerController dc;

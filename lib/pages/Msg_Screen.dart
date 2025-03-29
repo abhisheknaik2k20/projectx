@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
-import 'package:projectx/pages/ChatInterface/ChatScreen.dart';
+import 'package:SwiftTalk/pages/ChatInterface/ChatScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -206,9 +206,7 @@ class _MessagesPageState extends State<MessagesPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Open new chat screen or user selection
-        },
+        onPressed: () {},
         backgroundColor: Colors.teal, // WhatsApp green
         child: Icon(Icons.message, color: Colors.white),
       ),
