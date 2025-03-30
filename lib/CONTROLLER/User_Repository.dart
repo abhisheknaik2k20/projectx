@@ -9,10 +9,10 @@ class UserRepository {
   final CollectionReference _usersCollection =
       FirebaseFirestore.instance.collection('users');
 
-  Future<void> saveUser() async {
+  Future<void> saveUser(String email) async {
     String fcmToken = await _messaging.getToken() ?? '';
     final userData = UserModel(
-        email: _auth.currentUser?.email ?? '',
+        email: email,
         name: _auth.currentUser?.displayName ?? '',
         uid: _auth.currentUser?.uid ?? '',
         photoURL: _auth.currentUser?.photoURL ?? '',

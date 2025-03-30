@@ -2,7 +2,6 @@ import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:SwiftTalk/MODELS/Notification.dart';
 import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:SwiftTalk/VIEWS/ChatScreen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
@@ -11,7 +10,10 @@ import 'package:intl/intl.dart';
 class NotificationPage extends StatelessWidget {
   final AdvancedDrawerController dc;
 
-  const NotificationPage({required this.dc, super.key});
+  NotificationPage({required this.dc, super.key});
+
+  final _notificationRepo = NotificationRepository();
+  final _currentUser = FirebaseAuth.instance.currentUser;
 
   @override
   Widget build(BuildContext context) {
@@ -19,10 +21,8 @@ class NotificationPage extends StatelessWidget {
   }
 
   Widget _buildNotificationList(BuildContext context) {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    final notification = NotificationRepository();
     return StreamBuilder<List<NotificationClass>>(
-        stream: notification.getNotifications(currentUser!.uid),
+        stream: _notificationRepo.getNotifications(_currentUser!.uid),
         builder: (context, snapshot) {
           final notification = snapshot.data ?? [];
           return CustomScrollView(slivers: [
@@ -73,19 +73,15 @@ class NotificationPage extends StatelessWidget {
     };
 
     return Dismissible(
-        key: Key(notification.id),
+        key: Key(notification.id!),
         background: Container(
             color: Colors.red,
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: const Icon(Icons.delete, color: Colors.white)),
         direction: DismissDirection.endToStart,
-        onDismissed: (direction) => FirebaseFirestore.instance
-            .collection('users')
-            .doc(FirebaseAuth.instance.currentUser?.uid)
-            .collection('noti_Info')
-            .doc(notification.id)
-            .delete(),
+        onDismissed: (direction) => _notificationRepo.deleteNotification(
+            _currentUser!.uid, notification.id!),
         child: ListTile(
             onTap: () async {
               try {

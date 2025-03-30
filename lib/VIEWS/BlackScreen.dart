@@ -21,6 +21,7 @@ class BlackScreen extends StatefulWidget {
 class _BlackScreenState extends State<BlackScreen> {
   final _drawerController = AdvancedDrawerController();
   final _auth = FirebaseAuth.instance;
+
   @override
   void dispose() {
     _drawerController.dispose();

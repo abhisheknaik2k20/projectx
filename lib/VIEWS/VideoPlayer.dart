@@ -1,13 +1,14 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:SwiftTalk/MODELS/Message.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 
 class VideoPlayerView extends StatefulWidget {
-  final Map<String, dynamic> data;
-  const VideoPlayerView({super.key, required this.data});
+  final FileMessage fileMessage;
+  const VideoPlayerView({super.key, required this.fileMessage});
   @override
   State<VideoPlayerView> createState() => _VideoPlayerViewState();
 }
@@ -20,7 +21,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   void initState() {
     super.initState();
     _videoPlayerController =
-        VideoPlayerController.network(widget.data['message']);
+        VideoPlayerController.network(widget.fileMessage.message);
     _chewieController = ChewieController(
         looping: true,
         showControls: true,
@@ -46,7 +47,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
         backgroundColor: const Color.fromARGB(174, 66, 66, 66),
         appBar: AppBar(
             centerTitle: true,
-            title: Text(widget.data['fileName'],
+            title: Text(widget.fileMessage.filename,
                 style: const TextStyle(
                     color: Colors.white,
                     fontSize: 30,
@@ -54,7 +55,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
             actions: [
               IconButton(
                   onPressed: () =>
-                      _showBottomSheetDetails(widget.data, context),
+                      _showBottomSheetDetails(widget.fileMessage, context),
                   icon: const Icon(Icons.info, color: Colors.white, size: 30))
             ],
             leading: IconButton(
@@ -85,8 +86,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
         ])
       ]);
 
-  void _showBottomSheetDetails(
-      Map<String, dynamic> data, BuildContext context) {
+  void _showBottomSheetDetails(FileMessage fileMessage, BuildContext context) {
     final borderRadius = const BorderRadius.vertical(top: Radius.circular(40));
     _scaffoldKey.currentState!.showBottomSheet(
         shape: RoundedRectangleBorder(borderRadius: borderRadius),
@@ -106,14 +106,15 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                           fontSize: 40,
                           fontFamily: 'PTSans'))),
               const SizedBox(height: 20),
-              _detailItem(Icons.info, 'File Name', data['filename']),
+              _detailItem(Icons.info, 'File Name', fileMessage.filename),
               const SizedBox(height: 20),
               _detailItem(
                   Icons.calendar_month,
-                  DateFormat('MMMM-dd').format(data['timestamp'].toDate()),
-                  DateFormat('EEEE yyyy').format(data['timestamp'].toDate())),
+                  DateFormat('MMMM-dd').format(fileMessage.timestamp.toDate()),
+                  DateFormat('EEEE yyyy')
+                      .format(fileMessage.timestamp.toDate())),
               const SizedBox(height: 20),
-              _detailItem(Icons.picture_as_pdf, 'Type', data['type']),
+              _detailItem(Icons.picture_as_pdf, 'Type', fileMessage.type),
               const SizedBox(height: 20),
               Row(children: [
                 Icon(Icons.backup, size: 50, color: Colors.teal.shade400),
@@ -131,7 +132,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
                                       fontFamily: 'PTSans')),
                               GestureDetector(
                                   onTap: () {},
-                                  child: Text(data['message'],
+                                  child: Text(fileMessage.message,
                                       style: TextStyle(
                                           fontSize: 18,
                                           color: Colors.teal.shade400,

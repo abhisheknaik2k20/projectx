@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class NotificationClass {
-  final String id;
+  String? id;
   final String message;
   final String reciverId;
   final String senderId;
@@ -12,7 +12,7 @@ class NotificationClass {
   final String type;
 
   NotificationClass({
-    required this.id,
+    this.id,
     required this.message,
     required this.reciverId,
     required this.senderId,
@@ -74,20 +74,18 @@ class NotificationRepository {
         .add(notification.toMap());
   }
 
-  Future<void> updateNotifications({
-    required String reciverId,
-    required String message,
-    required String type,
-  }) async {
+  Future<void> updateNotifications(
+      {required String reciverId,
+      required String message,
+      required String type}) async {
     final notification = NotificationClass(
-      id: '',
-      message: message,
-      reciverId: reciverId,
-      senderId: _auth.currentUser?.uid ?? 'null',
-      senderName: _auth.currentUser?.displayName ?? 'unknown',
-      timestamp: Timestamp.now(),
-      type: type,
-    );
+        id: '',
+        message: message,
+        reciverId: reciverId,
+        senderId: _auth.currentUser?.uid ?? 'null',
+        senderName: _auth.currentUser?.displayName ?? 'unknown',
+        timestamp: Timestamp.now(),
+        type: type);
     await addNotification(notification);
   }
 

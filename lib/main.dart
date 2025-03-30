@@ -1,4 +1,5 @@
 import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
+import 'package:SwiftTalk/CONTROLLER/Login_Logic.dart';
 import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -7,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:SwiftTalk/firebase_options.dart';
 import 'package:SwiftTalk/VIEWS/BlackScreen.dart';
-import 'package:SwiftTalk/VIEWS/login_screen.dart';
+import 'package:SwiftTalk/VIEWS/Login_Screen.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -25,15 +26,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
-  'high_importance_channel',
-  'High Importance Notifications',
-  description: 'This channel is used for important notifications.',
-  importance: Importance.max,
-  playSound: true,
-  enableVibration: true,
-  showBadge: true,
-  enableLights: true,
-);
+    'high_importance_channel', 'High Importance Notifications',
+    description: 'This channel is used for important notifications.',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+    showBadge: true,
+    enableLights: true);
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -48,20 +47,16 @@ Future<void> setupFlutterNotifications() async {
 
   // Configure iOS settings
   await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
+      alert: true, badge: true, sound: true);
 
   // Initialize settings for both platforms
   const InitializationSettings initSettings = InitializationSettings(
     android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     iOS: DarwinInitializationSettings(
-      requestSoundPermission: true,
-      requestBadgePermission: true,
-      requestAlertPermission: true,
-      defaultPresentSound: true,
-    ),
+        requestSoundPermission: true,
+        requestBadgePermission: true,
+        requestAlertPermission: true,
+        defaultPresentSound: true),
   );
 
   await flutterLocalNotificationsPlugin.initialize(
@@ -125,7 +120,8 @@ void main() async {
     Provider<UserRepository>(create: (_) => UserRepository()),
     ChangeNotifierProxyProvider<UserRepository, CallStatusProvider>(
         create: (context) => CallStatusProvider(context.read<UserRepository>()),
-        update: (context, userRepository, previous) => previous!)
+        update: (context, userRepository, previous) => previous!),
+    ChangeNotifierProvider(create: (_) => AuthLoadingProvider())
   ], child: MyApp()));
 }
 
@@ -162,7 +158,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         // Navigate to specific screen based on message if needed
       }
     });
-
     _setupMessaging();
   }
 
@@ -202,11 +197,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             useMaterial3: true,
             appBarTheme: AppBarTheme(color: Colors.teal.shade500)),
         debugShowCheckedModeBanner: false,
-        home: StreamBuilder(
-            stream: FirebaseAuth.instance.authStateChanges(),
-            builder: (context, snapshot) => switch (snapshot) {
-                  AsyncSnapshot(hasData: true) => const BlackScreen(),
-                  _ => const LoginSignupScreen()
-                }));
+        home: Consumer<AuthLoadingProvider>(
+          builder: (context, loading, child) {
+            if (loading.isLoading) {
+              return Scaffold(
+                  body: Center(
+                      child: CircularProgressIndicator(color: Colors.teal)));
+            }
+            return StreamBuilder(
+                stream: FirebaseAuth.instance.authStateChanges(),
+                builder: (context, snapshot) => switch (snapshot) {
+                      AsyncSnapshot(hasData: true) => const BlackScreen(),
+                      _ => const LoginSignupScreen()
+                    });
+          },
+        ));
   }
 }

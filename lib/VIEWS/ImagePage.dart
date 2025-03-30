@@ -1,3 +1,4 @@
+import 'package:SwiftTalk/MODELS/Message.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -5,8 +6,8 @@ import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
 class ImagePage extends StatefulWidget {
-  final Map data;
-  const ImagePage({super.key, required this.data});
+  final FileMessage fileMessage;
+  const ImagePage({super.key, required this.fileMessage});
 
   @override
   State<ImagePage> createState() => _ImagePageState();
@@ -44,19 +45,18 @@ class _ImagePageState extends State<ImagePage>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.data['fileName'],
+                  Text(widget.fileMessage.filename,
                       style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87)),
                   const SizedBox(height: 20),
-                  _buildDetailRow(
-                      'Sender :', widget.data['senderName'] ?? 'Unknown'),
+                  _buildDetailRow('Sender :', widget.fileMessage.senderName),
                   _buildDetailRow('Type', 'Image'),
                   _buildDetailRow(
                       "TimeStamp :",
                       DateFormat('yyyy-MM-dd HH:mm:ss')
-                          .format(widget.data['timestamp'].toDate())),
+                          .format(widget.fileMessage.timestamp.toDate())),
                   const SizedBox(height: 20)
                 ])));
   }
@@ -92,7 +92,7 @@ class _ImagePageState extends State<ImagePage>
                         color: Colors.white),
                     onPressed: () => Navigator.pop(context)),
                 centerTitle: true,
-                title: Text(widget.data['fileName'],
+                title: Text(widget.fileMessage.filename,
                     style: const TextStyle(
                         color: Colors.white,
                         fontSize: 30,
@@ -111,8 +111,8 @@ class _ImagePageState extends State<ImagePage>
                 child: PhotoViewGallery.builder(
                     itemCount: 1,
                     builder: (_, __) => PhotoViewGalleryPageOptions(
-                        imageProvider:
-                            CachedNetworkImageProvider(widget.data['message']),
+                        imageProvider: CachedNetworkImageProvider(
+                            widget.fileMessage.message),
                         minScale: PhotoViewComputedScale.contained,
                         maxScale: PhotoViewComputedScale.covered * 2),
                     backgroundDecoration:

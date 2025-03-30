@@ -1,5 +1,7 @@
 // ignore_for_file:
 import 'dart:io';
+import 'package:SwiftTalk/MODELS/Message.dart';
+import 'package:SwiftTalk/MODELS/Notification.dart';
 import 'package:aws_storage_service/aws_storage_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,59 +12,28 @@ import 'package:path/path.dart' as path;
 class ChatService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  Future<void> updateNotifications(
-      {required String reciverId,
-      required String message,
-      required type}) async {
-    await _firestore
-        .collection('users')
-        .doc(reciverId)
-        .collection('noti_Info')
-        .add({
-      "message": message,
-      "reciverId": reciverId,
-      "senderId": _auth.currentUser?.uid ?? 'null',
-      'senderName': _auth.currentUser?.displayName ?? 'unknown',
-      'timestamp': Timestamp.now(),
-      'type': type
-    });
-  }
-
-  Future<void> SendMessage(
-      {required String reciverId, required String message}) async {
+  final NotificationRepository _notificationRepository =
+      NotificationRepository();
+  Future<void> SendMessage({required Message message}) async {
     final String currentUserId = _auth.currentUser!.uid;
-    final String currentUserEmail = _auth.currentUser!.email.toString();
-    final Timestamp timestamp = Timestamp.now();
-    Map<String, dynamic> newMessage = {
-      "senderName": _auth.currentUser!.displayName ?? '',
-      "senderId": currentUserId,
-      "senderEmail": currentUserEmail,
-      "reciverId": reciverId,
-      "message": message,
-      "timestamp": timestamp,
-      "type": 'text'
-    };
-    List<String> ids = [currentUserId, reciverId];
-    ids.sort();
-    String ChatroomID = ids.join("_");
+    String ChatroomID = ([currentUserId, message.receiverId]..sort()).join("_");
     try {
       await _firestore
           .collection('chat_Rooms')
           .doc(ChatroomID)
           .collection('messages')
-          .add(newMessage);
-      await updateNotifications(
-          reciverId: reciverId, message: message, type: "text");
+          .add(message.toMap());
+      await _notificationRepository.updateNotifications(
+          reciverId: message.receiverId,
+          message: message.message,
+          type: message.type);
     } catch (except) {
       print(except);
     }
   }
 
   Stream<QuerySnapshot> getMessages(String userId, String otheruserId) {
-    List<String> ids = [userId, otheruserId];
-    ids.sort();
-    String ChatroomID = ids.join("_");
+    String ChatroomID = ([userId, otheruserId]..sort()).join("_");
     return _firestore
         .collection('chat_Rooms')
         .doc(ChatroomID)
@@ -75,35 +46,14 @@ class ChatService extends ChangeNotifier {
 class S3UploadService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final NotificationRepository _notificationRepository =
+      NotificationRepository();
 
   final AwsCredentialsConfig _credentialsConfig = AwsCredentialsConfig(
       accessKey: ACCESS_KEY,
       secretKey: SECRET,
       bucketName: BUCKET,
       region: REGION);
-
-  Future<String?> uploadImageToS3(
-      {required File imageFile, String? customPath}) async {
-    try {
-      if (!await imageFile.exists()) {
-        debugPrint('File does not exist');
-        return null;
-      }
-      final fileSize = await imageFile.length();
-      final fileName = path.basename(imageFile.path);
-      debugPrint('Uploading file: $fileName, Size: $fileSize bytes');
-      final s3Path = customPath ??
-          'chat_images/${DateTime.now().millisecondsSinceEpoch}_$fileName';
-      if (fileSize > 10 * 1024 * 1024) {
-        return await _uploadLargeFile(imageFile, s3Path);
-      } else {
-        return await _uploadSmallFile(imageFile, s3Path);
-      }
-    } catch (e) {
-      debugPrint('S3 Upload Error: $e');
-      return null;
-    }
-  }
 
   Future<String?> _uploadSmallFile(File file, String s3Path) async {
     try {
@@ -151,201 +101,67 @@ class S3UploadService {
   String _constructS3Url(String objectKey) =>
       'https://${_credentialsConfig.bucketName}.s3.${_credentialsConfig.region}.amazonaws.com/$objectKey';
 
-  Future<void> uploadAndSendVideo(
-      {required File videoFile, required String receiverUid}) async {
+  Future<void> uploadFileToS3({
+    required String reciverId,
+    required File file,
+    required String fileType,
+  }) async {
+    User user = FirebaseAuth.instance.currentUser!;
+    String? result;
+    int fileSize = 0;
     try {
-      final videoUrl = await uploadFileToS3(
-          file: videoFile,
-          fileType: 'videos',
-          allowedExtensions: ['.mp4', '.mov', '.avi'],
-          maxFileSizeMB: 50);
-
-      if (videoUrl != null) {
-        await sendFileMessage(
-            fileName: videoFile.path.split('/').last,
-            fileUrl: videoUrl,
-            receiverUid: receiverUid,
-            fileType: 'Video');
-
-        await ChatService().updateNotifications(
-            reciverId: receiverUid,
-            message: videoFile.path.split('/').last,
-            type: "Video");
-      } else {
-        debugPrint('Video upload failed');
-      }
-    } catch (e) {
-      debugPrint('Video upload and send process error: $e');
-    }
-  }
-
-  Future<void> uploadAndSendAudio(
-      {required File audioFile, required String receiverUid}) async {
-    try {
-      final audioUrl = await uploadFileToS3(
-          file: audioFile,
-          fileType: 'audio',
-          allowedExtensions: ['.mp3', '.wav', '.m4a', '.aac'],
-          maxFileSizeMB: 20);
-
-      if (audioUrl != null) {
-        await sendFileMessage(
-            fileName: audioFile.path.split('/').last,
-            fileUrl: audioUrl,
-            receiverUid: receiverUid,
-            fileType: 'Audio');
-        await ChatService().updateNotifications(
-            reciverId: receiverUid,
-            message: audioFile.path.split('/').last,
-            type: "Audio");
-      } else {
-        debugPrint('Audio upload failed');
-      }
-    } catch (e) {
-      debugPrint('Audio upload and send process error: $e');
-    }
-  }
-
-  Future<void> uploadAndSendPDF(
-      {required File pdfFile, required String receiverUid}) async {
-    try {
-      final pdfUrl = await uploadFileToS3(
-          file: pdfFile,
-          fileType: 'documents',
-          allowedExtensions: ['.pdf'],
-          maxFileSizeMB: 30);
-
-      if (pdfUrl != null) {
-        await sendFileMessage(
-            fileName: pdfFile.path.split('/').last,
-            fileUrl: pdfUrl,
-            receiverUid: receiverUid,
-            fileType: 'PDF');
-        await ChatService().updateNotifications(
-            reciverId: receiverUid,
-            message: pdfFile.path.split('/').last,
-            type: "PDF");
-      } else {
-        debugPrint('PDF upload failed');
-      }
-    } catch (e) {
-      debugPrint('PDF upload and send process error: $e');
-    }
-  }
-
-  Future<String?> uploadFileToS3(
-      {required File file,
-      required String fileType,
-      List<String> allowedExtensions = const [],
-      int maxFileSizeMB = 10}) async {
-    try {
-      if (!await file.exists()) {
-        debugPrint('File does not exist');
-        return null;
-      }
       final fileName = path.basename(file.path);
-      final fileExtension = path.extension(fileName).toLowerCase();
-      if (allowedExtensions.isNotEmpty &&
-          !allowedExtensions.contains(fileExtension)) {
-        debugPrint('Invalid file type. Allowed types: $allowedExtensions');
-        return null;
-      }
-
-      final fileSize = await file.length();
-      final maxBytes = maxFileSizeMB * 1024 * 1024;
+      fileSize = await file.length();
+      final maxBytes = 50 * 1024 * 1024;
       if (fileSize > maxBytes) {
-        debugPrint('File size exceeds maximum limit of $maxFileSizeMB MB');
-        return null;
+        debugPrint('File size exceeds maximum limit of 50 MB');
+        return;
       }
       final s3Path =
           '$fileType/${DateTime.now().millisecondsSinceEpoch}_$fileName';
-
       if (fileSize > 10 * 1024 * 1024) {
-        return await _uploadLargeFile(file, s3Path);
+        result = await _uploadLargeFile(file, s3Path);
       } else {
-        return await _uploadSmallFile(file, s3Path);
+        result = await _uploadSmallFile(file, s3Path);
       }
     } catch (e) {
       debugPrint('S3 File Upload Error: $e');
-      return null;
-    }
-  }
-
-  Future<void> sendFileMessage(
-      {required String fileName,
-      required String fileUrl,
-      required String receiverUid,
-      required String fileType}) async {
-    try {
-      List<String> ids = [_auth.currentUser!.uid, receiverUid];
-      ids.sort();
-      String chatroomId = ids.join("_");
-      await _firestore
-          .collection('chat_Rooms')
-          .doc(chatroomId)
-          .collection('messages')
-          .add({
-        'fileName': fileName,
-        'senderName': _auth.currentUser!.displayName,
-        'senderId': _auth.currentUser!.uid,
-        'senderEmail': _auth.currentUser!.email,
-        'receiverId': receiverUid,
-        'message': fileUrl,
-        'type': fileType,
-        'timestamp': Timestamp.now()
-      });
-    } catch (e) {
-      debugPrint('Firestore message send error: $e');
-    }
-  }
-
-  Future<void> sendImageMessage(
-      {required String fileName,
-      required String imageUrl,
-      required String receiverUid}) async {
-    try {
-      List<String> ids = [_auth.currentUser!.uid, receiverUid];
-      ids.sort();
-      String chatroomId = ids.join("_");
-      await _firestore
-          .collection('chat_Rooms')
-          .doc(chatroomId)
-          .collection('messages')
-          .add({
-        'fileName': fileName,
-        'senderName': _auth.currentUser!.displayName,
-        'senderId': _auth.currentUser!.uid,
-        'senderEmail': _auth.currentUser!.email,
-        'receiverId': receiverUid,
-        'message': imageUrl,
-        'type': 'Image',
-        'timestamp': Timestamp.now()
-      });
-    } catch (e) {
-      debugPrint('Firestore message send error: $e');
-    }
-  }
-
-  Future<void> uploadAndSendImage({
-    required File imageFile,
-    required String receiverUid,
-  }) async {
-    try {
-      final imageUrl = await uploadImageToS3(imageFile: imageFile);
-      if (imageUrl != null) {
-        await sendImageMessage(
-            fileName: imageFile.path.split("/").last,
-            imageUrl: imageUrl,
-            receiverUid: receiverUid);
-        await ChatService().updateNotifications(
-            reciverId: receiverUid,
-            message: imageFile.path.split("/").last,
-            type: "Image");
-      } else {
-        debugPrint('Image upload failed');
+      return;
+    } finally {
+      if (result != null) {
+        await sendFileMessage(
+            message: FileMessage(
+                senderName: user.displayName ?? '',
+                senderId: user.uid,
+                senderEmail: user.email ?? '',
+                receiverId: reciverId,
+                message: result,
+                timestamp: Timestamp.now(),
+                filename: path.basename(file.path),
+                type: fileType,
+                fileSize: fileSize));
+        await _notificationRepository.addNotification(NotificationClass(
+            message: path.basename(file.path),
+            reciverId: reciverId,
+            senderId: user.uid,
+            senderName: user.displayName ?? '',
+            timestamp: Timestamp.now(),
+            type: fileType));
       }
+    }
+  }
+
+  Future<void> sendFileMessage({required FileMessage message}) async {
+    try {
+      String chatroomId =
+          ([_auth.currentUser!.uid, message.receiverId]..sort()).join("_");
+      await _firestore
+          .collection('chat_Rooms')
+          .doc(chatroomId)
+          .collection('messages')
+          .add(message.toMap());
     } catch (e) {
-      debugPrint('Complete upload and send process error: $e');
+      debugPrint('Firestore message send error: $e');
     }
   }
 }
