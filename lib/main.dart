@@ -163,7 +163,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       }
     });
 
-    // Get FCM token and subscribe to topics
     _setupMessaging();
   }
 
@@ -174,7 +173,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       String status = state == AppLifecycleState.resumed
           ? 'Online'
           : 'Last seen ${DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now())}';
-      userRepository.updateUserStatus(auth.currentUser!.uid, status);
+      if (auth.currentUser?.uid != null) {
+        userRepository.updateUserStatus(auth.currentUser!.uid, status);
+      }
       _setupMessaging();
     }
   }

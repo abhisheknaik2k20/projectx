@@ -1,6 +1,6 @@
+import 'package:SwiftTalk/CONTROLLER/login_logic.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:SwiftTalk/CONTROLLER/Login_SignUp_Logic.dart';
 
 class LoginSignupScreen extends StatefulWidget {
   const LoginSignupScreen({super.key});

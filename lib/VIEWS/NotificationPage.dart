@@ -1,3 +1,6 @@
+import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
+import 'package:SwiftTalk/MODELS/Notification.dart';
+import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:SwiftTalk/VIEWS/ChatScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,39 +19,32 @@ class NotificationPage extends StatelessWidget {
   }
 
   Widget _buildNotificationList(BuildContext context) {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    Stream<QuerySnapshot> getNotifications(String userId) {
-      return firestore
-          .collection('users')
-          .doc(userId)
-          .collection('noti_Info')
-          .orderBy('timestamp', descending: false)
-          .snapshots();
-    }
-
-    return StreamBuilder<QuerySnapshot>(
-        stream: getNotifications(currentUser!.uid),
-        builder: (context, snapshot) => CustomScrollView(slivers: [
-              SliverAppBar(
-                  backgroundColor: Colors.teal,
-                  leading: IconButton(
-                      icon: const Icon(Icons.menu, color: Colors.white),
-                      onPressed: () => dc.showDrawer()),
-                  title: const Text('Notifications',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w500)),
-                  floating: true),
-              if (snapshot.hasData && snapshot.data!.docs.isNotEmpty)
-                SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                  final document = snapshot.data!.docs[index];
-                  return _buildNotificationItem(document, context);
-                }, childCount: snapshot.data!.docs.length))
-              else
-                SliverFillRemaining(child: _buildEmptyState())
-            ]));
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final notification = NotificationRepository();
+    return StreamBuilder<List<NotificationClass>>(
+        stream: notification.getNotifications(currentUser!.uid),
+        builder: (context, snapshot) {
+          final notification = snapshot.data ?? [];
+          return CustomScrollView(slivers: [
+            SliverAppBar(
+                backgroundColor: Colors.teal,
+                leading: IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white),
+                    onPressed: () => dc.showDrawer()),
+                title: const Text('Notifications',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w500)),
+                floating: true),
+            if (notification.isNotEmpty)
+              SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                final document = snapshot.data![index];
+                return _buildNotificationItem(document, context);
+              }, childCount: snapshot.data!.length))
+            else
+              SliverFillRemaining(child: _buildEmptyState())
+          ]);
+        });
   }
 
   Widget _buildEmptyState() => Center(
@@ -67,9 +63,7 @@ class NotificationPage extends StatelessWidget {
       ]));
 
   Widget _buildNotificationItem(
-      DocumentSnapshot document, BuildContext context) {
-    final data = document.data() as Map<String, dynamic>;
-
+      NotificationClass notification, BuildContext context) {
     final typeIcons = {
       'Image': Icons.image,
       'Video': Icons.video_collection,
@@ -79,7 +73,7 @@ class NotificationPage extends StatelessWidget {
     };
 
     return Dismissible(
-        key: Key(document.id),
+        key: Key(notification.id),
         background: Container(
             color: Colors.red,
             alignment: Alignment.centerRight,
@@ -90,46 +84,54 @@ class NotificationPage extends StatelessWidget {
             .collection('users')
             .doc(FirebaseAuth.instance.currentUser?.uid)
             .collection('noti_Info')
-            .doc(document.id)
+            .doc(notification.id)
             .delete(),
         child: ListTile(
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => ChatPage(
-                    receiverUid: data['senderId'],
-                    receiverName: data['senderName']))),
+            onTap: () async {
+              try {
+                showCircularProgressBar(context);
+                UserModel? receiver =
+                    await UserRepository().getUserById(notification.senderId);
+                Navigator.of(context).pop();
+                if (receiver != null) {
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => ChatPage(receiver: receiver)));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      backgroundColor: Colors.red,
+                      content: Text("Error......")));
+                }
+              } catch (error) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    backgroundColor: Colors.blue,
+                    content: Text(error.toString())));
+              }
+            },
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading:
-                Icon(typeIcons[data['type']], size: 50, color: Colors.teal),
-            title: Text(_getNotificationTitle(data),
+            leading: Icon(typeIcons[notification.type],
+                size: 50, color: Colors.teal),
+            title: Text("${notification.type} from ${notification.senderName}",
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
             subtitle:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(data['message'],
+              Text(notification.message,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 16, color: Colors.grey.shade700)),
               const SizedBox(height: 4),
               Text(
                   DateFormat('MMM dd, yyyy hh:mm a')
-                      .format(data['timestamp'].toDate()),
+                      .format(notification.timestamp.toDate()),
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade500))
             ])));
   }
+}
 
-  String _getNotificationTitle(Map<String, dynamic> data) {
-    switch (data['type']) {
-      case 'Image':
-        return 'Image from ${data["senderName"]}';
-      case 'Video':
-        return 'Video from ${data["senderName"]}';
-      case 'Audio':
-        return 'Audio from ${data["senderName"]}';
-      case 'PDF':
-        return 'PDF from ${data["senderName"]}';
-      default:
-        return 'Message from ${data["senderName"]}';
-    }
-  }
+showCircularProgressBar(BuildContext context) {
+  return showDialog(
+      context: context,
+      builder: (context) =>
+          Center(child: CircularProgressIndicator(color: Colors.teal)));
 }

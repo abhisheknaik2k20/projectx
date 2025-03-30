@@ -5,6 +5,7 @@ import 'package:SwiftTalk/VIEWS/ImagePage.dart';
 import 'package:SwiftTalk/VIEWS/Profile.dart';
 import 'package:SwiftTalk/VIEWS/Screen1.dart';
 import 'package:SwiftTalk/VIEWS/VideoPlayer.dart';
+import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -133,12 +134,10 @@ class WhatsAppChatAppBar extends StatelessWidget
 }
 
 class ChatPage extends StatelessWidget {
-  final String receiverUid;
-  final String receiverName;
+  final UserModel receiver;
   const ChatPage({
     super.key,
-    required this.receiverUid,
-    required this.receiverName,
+    required this.receiver,
   });
   @override
   Widget build(BuildContext context) {
@@ -148,27 +147,19 @@ class ChatPage extends StatelessWidget {
     }
     return Scaffold(
         appBar: WhatsAppChatAppBar(
-            receiverUid: receiverUid,
-            receiverName: receiverName,
-            chatroomID: ([FirebaseAuth.instance.currentUser!.uid, receiverUid]
+            receiverUid: receiver.uid,
+            receiverName: receiver.name,
+            chatroomID: ([FirebaseAuth.instance.currentUser!.uid, receiver.uid]
                   ..sort())
                 .join("_")),
-        body: ChatPageContent(
-          receiverUid: receiverUid,
-          receiverName: receiverName,
-        ));
+        body: ChatPageContent(receiver: receiver));
   }
 }
 
 class ChatPageContent extends StatefulWidget {
-  final String receiverUid;
-  final String receiverName;
+  final UserModel receiver;
 
-  const ChatPageContent({
-    super.key,
-    required this.receiverUid,
-    required this.receiverName,
-  });
+  const ChatPageContent({super.key, required this.receiver});
 
   @override
   State<ChatPageContent> createState() => _ChatPageContentState();
@@ -197,10 +188,8 @@ class _ChatPageContentState extends State<ChatPageContent>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     setStatus('Online');
-    List<String> ids = [_auth.currentUser!.uid, widget.receiverUid];
-    ids.sort();
     ChatroomID =
-        ([_auth.currentUser!.uid, widget.receiverUid]..sort()).join("_");
+        ([_auth.currentUser!.uid, widget.receiver.uid]..sort()).join("_");
     initializeSpeech();
   }
 
@@ -260,7 +249,7 @@ class _ChatPageContentState extends State<ChatPageContent>
       String textmessage = _messageController.text;
       _messageController.clear();
       await _chatService.SendMessage(
-          reciverId: widget.receiverUid, message: textmessage);
+          reciverId: widget.receiver.uid, message: textmessage);
     }
   }
 
@@ -277,7 +266,7 @@ class _ChatPageContentState extends State<ChatPageContent>
         imageFile = file;
         S3UploadService().uploadAndSendImage(
           imageFile: imageFile!,
-          receiverUid: widget.receiverUid,
+          receiverUid: widget.receiver.uid,
         );
       } else {
         print("Unsupported file type");
@@ -295,9 +284,7 @@ class _ChatPageContentState extends State<ChatPageContent>
           result.files.single.extension?.toLowerCase() == 'avi') {
         videoFile = file;
         S3UploadService().uploadAndSendVideo(
-          videoFile: videoFile!,
-          receiverUid: widget.receiverUid,
-        );
+            videoFile: videoFile!, receiverUid: widget.receiver.uid);
       }
     }
   }
@@ -314,9 +301,7 @@ class _ChatPageContentState extends State<ChatPageContent>
           result.files.single.extension?.toLowerCase() == 'aac') {
         audioFile = file;
         S3UploadService().uploadAndSendAudio(
-          audioFile: audioFile!,
-          receiverUid: widget.receiverUid,
-        );
+            audioFile: audioFile!, receiverUid: widget.receiver.uid);
       }
     }
   }
@@ -330,9 +315,7 @@ class _ChatPageContentState extends State<ChatPageContent>
       if (result.files.single.extension?.toLowerCase() == 'pdf') {
         docFile = file;
         S3UploadService().uploadAndSendPDF(
-          pdfFile: docFile!,
-          receiverUid: widget.receiverUid,
-        );
+            pdfFile: docFile!, receiverUid: widget.receiver.uid);
       }
     }
   }
@@ -342,7 +325,7 @@ class _ChatPageContentState extends State<ChatPageContent>
     return Column(children: [
       Expanded(
           child: WhatsAppMessageList(
-              receiverUid: widget.receiverUid,
+              receiverUid: widget.receiver.uid,
               scrollController: _scrollController,
               auth: _auth,
               chatService: _chatService,

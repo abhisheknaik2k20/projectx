@@ -1,8 +1,8 @@
+import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
+import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
 import 'package:SwiftTalk/VIEWS/ChatScreen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class MessagesPage extends StatefulWidget {
   final AdvancedDrawerController dc;
@@ -15,8 +15,7 @@ class MessagesPage extends StatefulWidget {
 class _MessagesPageState extends State<MessagesPage> {
   bool _isSearchVisible = false;
   final TextEditingController _searchController = TextEditingController();
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-
+  final _userRepository = UserRepository();
   @override
   void dispose() {
     _searchController.dispose();
@@ -87,8 +86,8 @@ class _MessagesPageState extends State<MessagesPage> {
       : SizedBox.shrink();
 
   Widget _buildChatList() => Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-          stream: _db.collection('users').snapshots(),
+      child: StreamBuilder<List<UserModel>>(
+          stream: _userRepository.getAllUsers(),
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Center(
@@ -99,35 +98,33 @@ class _MessagesPageState extends State<MessagesPage> {
               return Center(
                   child: CircularProgressIndicator(color: Colors.teal));
             }
-            final currentUser = FirebaseAuth.instance.currentUser;
-            final users = snapshot.data!.docs.where((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              return data['uid'] != currentUser?.uid;
-            }).toList();
+            if (!snapshot.hasData) {
+              return const Center(
+                child: Text("No Users Found"),
+              );
+            }
 
+            final users = snapshot.data ?? [];
             return ListView.builder(
                 itemCount: users.length,
                 itemBuilder: (context, index) {
-                  final userData = users[index].data() as Map<String, dynamic>;
-                  return _buildChatListItem(userData);
+                  return _buildChatListItem(users[index]);
                 });
           }));
 
-  Widget _buildChatListItem(Map<String, dynamic> userData) => ListTile(
+  Widget _buildChatListItem(UserModel userData) => ListTile(
       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: CircleAvatar(
           radius: 30,
           backgroundColor: Colors.grey.shade300,
           backgroundImage:
-              userData['photoURL'] != '' && userData['photoURL'].isNotEmpty
-                  ? NetworkImage(userData['photoURL'])
-                  : null,
-          child: userData['photoURL'] == '' || userData['photoURL'].isEmpty
+              userData.photoURL != '' ? NetworkImage(userData.photoURL) : null,
+          child: userData.photoURL == ''
               ? Icon(Icons.account_circle, color: Colors.teal, size: 60)
               : null),
-      title: Text(userData['username'] ?? 'Unknown User',
+      title: Text(userData.username,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-      subtitle: Text(userData['email'] ?? '',
+      subtitle: Text(userData.email,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(color: Colors.grey.shade600)),
@@ -136,8 +133,8 @@ class _MessagesPageState extends State<MessagesPage> {
             context,
             MaterialPageRoute(
                 builder: (context) => ChatPage(
-                    receiverName: userData['username'] ?? 'Unknown',
-                    receiverUid: userData['uid'] ?? '')));
+                      receiver: userData,
+                    )));
       });
 
   @override
@@ -172,47 +169,6 @@ class MessageTile extends StatelessWidget {
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 textAlign: TextAlign.center))
       ]));
-}
-
-class MessageTileTwo extends StatelessWidget {
-  const MessageTileTwo({super.key, required this.messageData, this.onTap});
-  final MessageData messageData;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-      onTap: () {
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => ChatPage(
-                receiverName: messageData.sendname,
-                receiverUid: messageData.uid)));
-      },
-      child: Padding(
-          padding: const EdgeInsets.only(left: 5, right: 5),
-          child: Container(
-              decoration: BoxDecoration(
-                  border:
-                      Border(bottom: BorderSide(color: Colors.grey.shade400)),
-                  borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20))),
-              child: Row(children: [
-                Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: CircleAvatar(
-                        backgroundColor: Colors.teal.shade500,
-                        child: const Icon(Icons.account_circle, size: 40))),
-                Expanded(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      Text(messageData.sendname,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 20)),
-                      Text(messageData.sendmessage,
-                          style: const TextStyle(fontSize: 10))
-                    ]))
-              ]))));
 }
 
 class MessageData {

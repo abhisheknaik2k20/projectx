@@ -1,4 +1,4 @@
-import 'package:SwiftTalk/models/User.dart';
+import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -9,18 +9,17 @@ class UserRepository {
   final CollectionReference _usersCollection =
       FirebaseFirestore.instance.collection('users');
 
-  Future<void> saveUser(User? firebaseUser) async {
-    if (firebaseUser == null) return;
+  Future<void> saveUser() async {
     String fcmToken = await _messaging.getToken() ?? '';
     final userData = UserModel(
-        email: firebaseUser.email ?? '',
-        name: firebaseUser.displayName ?? '',
-        uid: firebaseUser.uid,
-        photoURL: firebaseUser.photoURL ?? '',
-        username: firebaseUser.displayName ?? '',
+        email: _auth.currentUser?.email ?? '',
+        name: _auth.currentUser?.displayName ?? '',
+        uid: _auth.currentUser?.uid ?? '',
+        photoURL: _auth.currentUser?.photoURL ?? '',
+        username: _auth.currentUser?.displayName ?? '',
         fcmToken: fcmToken);
     await _usersCollection
-        .doc(firebaseUser.uid)
+        .doc(_auth.currentUser?.uid)
         .set(userData.toMap(), SetOptions(merge: true));
   }
 
@@ -58,16 +57,13 @@ class UserRepository {
     await _usersCollection.doc(userId).update({'isCall': isCall});
   }
 
-  Future<List<UserModel>> getAllUsers() async {
-    try {
-      QuerySnapshot querySnapshot = await _usersCollection.get();
-      return querySnapshot.docs
+  Stream<List<UserModel>> getAllUsers() {
+    return _usersCollection.snapshots().map((snapshot) {
+      return snapshot.docs
           .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
+          .where((user) => user.uid != _auth.currentUser?.uid)
           .toList();
-    } catch (e) {
-      print('Error getting all users: $e');
-      return [];
-    }
+    });
   }
 
   Stream<UserModel?> streamUserData(String userId) {

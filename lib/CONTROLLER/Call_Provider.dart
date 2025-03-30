@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
-import 'package:SwiftTalk/models/User.dart';
+import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,7 +13,7 @@ class CallStatusProvider extends ChangeNotifier {
 
   bool get isCallActive => _isCallActive;
 
-  StreamSubscription<UserModel?>? _subscription;
+  late StreamSubscription<UserModel?> _subscription;
 
   CallStatusProvider(this._userRepository) {
     _initCallStatusStream();
@@ -52,7 +52,7 @@ class CallStatusProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _subscription?.cancel();
+    _subscription.cancel();
     super.dispose();
   }
 }
