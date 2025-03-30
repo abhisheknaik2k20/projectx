@@ -1,10 +1,8 @@
-import 'package:SwiftTalk/CONTROLLER/Call_Provider';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:SwiftTalk/VIEWS/Call_Screen.dart';
 import 'package:SwiftTalk/VIEWS/NotificationPage.dart';
@@ -23,7 +21,6 @@ class BlackScreen extends StatefulWidget {
 class _BlackScreenState extends State<BlackScreen> {
   final _drawerController = AdvancedDrawerController();
   final _auth = FirebaseAuth.instance;
-
   @override
   void dispose() {
     _drawerController.dispose();
@@ -70,8 +67,7 @@ class _BlackScreenState extends State<BlackScreen> {
                       ? CircleAvatar(
                           backgroundImage:
                               NetworkImage(_auth.currentUser!.photoURL!),
-                          radius: 45,
-                        )
+                          radius: 45)
                       : const Icon(Icons.account_circle,
                           size: 100, color: Colors.white),
                   SizedBox(height: 10),
@@ -107,15 +103,14 @@ class _BlackScreenState extends State<BlackScreen> {
   Widget build(BuildContext context) {
     final callStatusProvider = context.watch<CallStatusProvider>();
     return AdvancedDrawer(
-      backdrop: _buildDrawerBackdrop(),
-      controller: _drawerController,
-      animationCurve: Curves.easeInOut,
-      animationDuration: const Duration(milliseconds: 300),
-      drawer: _buildDrawerContent(),
-      child: callStatusProvider.isCallActive
-          ? const CallScreen()
-          : HomePage(dc: _drawerController),
-    );
+        backdrop: _buildDrawerBackdrop(),
+        controller: _drawerController,
+        animationCurve: Curves.easeInOut,
+        animationDuration: const Duration(milliseconds: 300),
+        drawer: _buildDrawerContent(),
+        child: callStatusProvider.isCallActive
+            ? const CallScreen()
+            : HomePage(dc: _drawerController));
   }
 }
 
@@ -127,10 +122,9 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+class _HomePageState extends State<HomePage> {
   final ValueNotifier<double> valueNotifier = ValueNotifier(1.0);
   final _auth = FirebaseAuth.instance;
-  final _db = FirebaseFirestore.instance;
   late PageController _pageController;
   int _selectedIndex = 0;
   late List<Widget> _pages = [];
@@ -151,7 +145,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       NotificationPage(dc: widget.dc),
       ChatGPTScreen(valueNotifier: valueNotifier)
     ];
-    WidgetsBinding.instance.addObserver(this);
     _pageController = PageController(initialPage: _selectedIndex);
     _initializeApp();
   }
@@ -196,19 +189,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    _db.collection('users').doc(_auth.currentUser?.uid).update({
-      'status': state == AppLifecycleState.resumed
-          ? 'Online'
-          : 'Last seen ${DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now())}'
-    });
-  }
-
-  @override
   void dispose() {
     valueNotifier.dispose();
-    WidgetsBinding.instance.removeObserver(this);
     _pageController.removeListener(_handlePageChange);
     _pageController.dispose();
     super.dispose();

@@ -1,5 +1,5 @@
-import 'package:SwiftTalk/CONTROLLER/Call_Provider';
-import 'package:SwiftTalk/VIEWS/CallScreen/Call_Screen.dart';
+import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
+import 'package:SwiftTalk/VIEWS/Call_Screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
