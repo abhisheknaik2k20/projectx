@@ -1,4 +1,4 @@
-import 'package:SwiftTalk/pages/CallScreen/Call_Provider.dart';
+import 'package:SwiftTalk/CONTROLLER/Call_Provider';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -6,12 +6,11 @@ import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:SwiftTalk/pages/CallScreen/Call_Screen.dart';
-import 'package:SwiftTalk/pages/NotificationsPage/NotificationPage.dart';
-import 'package:SwiftTalk/pages/Profile.dart';
-import 'package:SwiftTalk/pages/QRScanner/QRScanner.dart';
-import 'package:SwiftTalk/pages/Chat_Bot.dart';
-import 'package:SwiftTalk/pages/Main_Screen.dart';
+import 'package:SwiftTalk/VIEWS/Call_Screen.dart';
+import 'package:SwiftTalk/VIEWS/NotificationPage.dart';
+import 'package:SwiftTalk/VIEWS/Profile.dart';
+import 'package:SwiftTalk/VIEWS/Chat_Bot.dart';
+import 'package:SwiftTalk/VIEWS/Main_Screen.dart';
 import 'package:provider/provider.dart';
 
 class BlackScreen extends StatefulWidget {
@@ -45,9 +44,7 @@ class _BlackScreenState extends State<BlackScreen> {
             onTap: () =>
                 _navigateTo(ProfilePage(UserUID: _auth.currentUser!.uid))),
         _buildDrawerItem(
-            icon: Icons.computer,
-            title: 'WEB-Login',
-            onTap: () => _navigateTo(const QRScanner())),
+            icon: Icons.computer, title: 'WEB-Login', onTap: () {}),
         _buildDrawerItem(
             icon: Icons.power_settings_new,
             title: 'Log-Out',
@@ -68,11 +65,25 @@ class _BlackScreenState extends State<BlackScreen> {
             child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  const Icon(
-                    Icons.account_circle,
-                    size: 100,
-                    color: Colors.white,
-                  ),
+                  SizedBox(height: 30),
+                  _auth.currentUser?.photoURL != null
+                      ? CircleAvatar(
+                          backgroundImage:
+                              NetworkImage(_auth.currentUser!.photoURL!),
+                          radius: 45,
+                        )
+                      : const Icon(Icons.account_circle,
+                          size: 100, color: Colors.white),
+                  SizedBox(height: 10),
+                  Wrap(children: [
+                    Text(_auth.currentUser?.displayName ?? 'Unknown User',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20),
+                        overflow: TextOverflow.ellipsis)
+                  ]),
+                  SizedBox(height: 10),
                   ..._drawerItems,
                   const Spacer(),
                   const Padding(
@@ -216,7 +227,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         bottomNavigationBar: _showNavBar
             ? AnimatedContainer(
                 duration: const Duration(microseconds: 300),
-                height: 76 * _navBarVal,
+                height: 72 * _navBarVal,
                 decoration: BoxDecoration(color: Colors.grey.shade900),
                 child: Padding(
                     padding: const EdgeInsets.symmetric(

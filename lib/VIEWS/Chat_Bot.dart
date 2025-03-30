@@ -254,7 +254,7 @@ class _ChatGPTScreenState extends State<ChatGPTScreen> {
         valueListenable: widget.valueNotifier,
         builder: (context, navbarheight, child) {
           return AnimatedContainer(
-              height: 76 * navbarheight,
+              height: 75 * navbarheight,
               duration: Duration(microseconds: 100),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               color: Colors.grey[300],

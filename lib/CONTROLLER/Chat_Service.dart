@@ -151,10 +151,8 @@ class S3UploadService {
   String _constructS3Url(String objectKey) =>
       'https://${_credentialsConfig.bucketName}.s3.${_credentialsConfig.region}.amazonaws.com/$objectKey';
 
-  Future<void> uploadAndSendVideo({
-    required File videoFile,
-    required String receiverUid,
-  }) async {
+  Future<void> uploadAndSendVideo(
+      {required File videoFile, required String receiverUid}) async {
     try {
       final videoUrl = await uploadFileToS3(
           file: videoFile,
@@ -164,11 +162,10 @@ class S3UploadService {
 
       if (videoUrl != null) {
         await sendFileMessage(
-          fileName: videoFile.path.split('/').last,
-          fileUrl: videoUrl,
-          receiverUid: receiverUid,
-          fileType: 'Video',
-        );
+            fileName: videoFile.path.split('/').last,
+            fileUrl: videoUrl,
+            receiverUid: receiverUid,
+            fileType: 'Video');
 
         await ChatService().updateNotifications(
             reciverId: receiverUid,
@@ -182,10 +179,8 @@ class S3UploadService {
     }
   }
 
-  Future<void> uploadAndSendAudio({
-    required File audioFile,
-    required String receiverUid,
-  }) async {
+  Future<void> uploadAndSendAudio(
+      {required File audioFile, required String receiverUid}) async {
     try {
       final audioUrl = await uploadFileToS3(
           file: audioFile,
@@ -211,10 +206,8 @@ class S3UploadService {
     }
   }
 
-  Future<void> uploadAndSendPDF({
-    required File pdfFile,
-    required String receiverUid,
-  }) async {
+  Future<void> uploadAndSendPDF(
+      {required File pdfFile, required String receiverUid}) async {
     try {
       final pdfUrl = await uploadFileToS3(
           file: pdfFile,
@@ -326,7 +319,7 @@ class S3UploadService {
         'receiverId': receiverUid,
         'message': imageUrl,
         'type': 'Image',
-        'timestamp': Timestamp.now(),
+        'timestamp': Timestamp.now()
       });
     } catch (e) {
       debugPrint('Firestore message send error: $e');

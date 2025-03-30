@@ -13,7 +13,6 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
     with SingleTickerProviderStateMixin {
   bool isLogin = true;
   bool _obscureText = true;
-  String _selectedUserType = 'Student';
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
@@ -326,15 +325,15 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
         if (isLogin &&
             _emailController.text.isNotEmpty &&
             _passwordController.text.isNotEmpty) {
-          emailpassLogin(_emailController.text, _passwordController.text,
-              context, _selectedUserType);
+          emailpassLogin(
+              _emailController.text, _passwordController.text, context);
         }
         if (_emailController.text.isNotEmpty &&
             _passwordController.text.isNotEmpty &&
             _phoneController.text.isNotEmpty &&
             _nameController.text.isNotEmpty) {
           emailpassSignup(_emailController.text, _passwordController.text,
-              _phoneController.text, context, _selectedUserType);
+              _phoneController.text, context);
         }
       },
       style: ElevatedButton.styleFrom(
@@ -360,7 +359,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
   Widget _buildGoogleLogin(ColorScheme colors) {
     return GestureDetector(
       onTap: () {
-        implementGoogleSignIn(context, _selectedUserType);
+        implementGoogleSignIn(context);
       },
       child: Container(
         width: 60,

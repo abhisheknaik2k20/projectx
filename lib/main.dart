@@ -1,13 +1,13 @@
-import 'package:SwiftTalk/pages/CallScreen/Call_Provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:SwiftTalk/CONTROLLER/Call_Provider';
+import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:SwiftTalk/firebase_options.dart';
-import 'package:SwiftTalk/pages/BlackScreen.dart';
-import 'package:SwiftTalk/pages/Login/login_screen.dart';
+import 'package:SwiftTalk/VIEWS/BlackScreen.dart';
+import 'package:SwiftTalk/VIEWS/Login/login_screen.dart';
 import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -120,8 +120,12 @@ void main() async {
       announcement: true,
       carPlay: true,
       criticalAlert: true);
-  runApp(ChangeNotifierProvider(
-      create: (context) => CallStatusProvider(), child: const MyApp()));
+  runApp(MultiProvider(providers: [
+    Provider<UserRepository>(create: (_) => UserRepository()),
+    ChangeNotifierProxyProvider<UserRepository, CallStatusProvider>(
+        create: (context) => CallStatusProvider(context.read<UserRepository>()),
+        update: (context, userRepository, previous) => previous!)
+  ], child: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
@@ -164,6 +168,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Re-request permissions when app comes to foreground
     if (state == AppLifecycleState.resumed) {
+      super.didChangeAppLifecycleState(state);
+
       _setupMessaging();
     }
   }
@@ -175,23 +181,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _setupMessaging() async {
-    FirebaseFirestore instance = FirebaseFirestore.instance;
-    FirebaseAuth auth = FirebaseAuth.instance;
-    String? token = await FirebaseMessaging.instance.getToken();
-    print('FCM Token: $token');
-
+    UserRepository userRepository = UserRepository();
     await FirebaseMessaging.instance.subscribeToTopic('all_users');
-
-    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) => instance
-        .collection("users")
-        .doc(auth.currentUser?.uid)
-        .update({'fcmToken': token}));
+    FirebaseMessaging.instance.onTokenRefresh
+        .listen((newToken) => userRepository.updateFcmToken(newToken));
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        navigatorKey: navigatorKey, // Add navigation key for push notifications
+        navigatorKey: navigatorKey,
         title: 'SwiftTalk',
         theme: ThemeData(
             useMaterial3: true,
