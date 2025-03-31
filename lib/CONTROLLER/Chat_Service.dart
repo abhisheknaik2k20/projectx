@@ -32,14 +32,25 @@ class ChatService extends ChangeNotifier {
     }
   }
 
-  Stream<QuerySnapshot> getMessages(String userId, String otheruserId) {
-    String ChatroomID = ([userId, otheruserId]..sort()).join("_");
+  Stream<List<dynamic>> getMessages(String userId, String otheruserId) {
+    String chatroomID = ([userId, otheruserId]..sort()).join("_");
+
     return _firestore
         .collection('chat_Rooms')
-        .doc(ChatroomID)
+        .doc(chatroomID)
         .collection('messages')
         .orderBy('timestamp', descending: false)
-        .snapshots();
+        .snapshots()
+        .map((querySnapshot) {
+      return querySnapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data();
+        if (data['type'] == 'text' || data['type'] == 'deleted') {
+          return Message.fromMap(data, doc.id);
+        } else {
+          return FileMessage.fromMap(data, doc.id);
+        }
+      }).toList();
+    });
   }
 }
 

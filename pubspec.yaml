@@ -19,7 +19,7 @@ dependencies:
   get: ^4.6.6
   google_nav_bar: ^5.0.6
   google_sign_in: ^6.3.0
-  permission_handler: ^11.2.0
+  permission_handler: ^11.4.0
   http: ^1.2.0
   flutter_webrtc: ^0.13.0
   uuid: ^4.3.3
@@ -51,6 +51,10 @@ dependencies:
   flutter_launcher_icons: ^0.14.3
   provider: ^6.1.4
   flutter_local_notifications: ^19.0.0
+  path_provider: ^2.1.5
+  device_info_plus: ^11.3.0
+  video_thumbnail: ^0.5.3
+  open_file: ^3.5.10
   
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Message {
+  String? id;
   final String senderName;
   final String senderId;
   final String senderEmail;
@@ -10,7 +11,8 @@ class Message {
   final String type;
 
   Message(
-      {required this.senderName,
+      {this.id,
+      required this.senderName,
       required this.senderId,
       required this.senderEmail,
       required this.receiverId,
@@ -18,8 +20,9 @@ class Message {
       required this.timestamp,
       required this.type});
 
-  factory Message.fromMap(Map<String, dynamic> map) {
+  factory Message.fromMap(Map<String, dynamic> map, String docId) {
     return Message(
+        id: docId,
         senderName: map['senderName'] ?? '',
         senderId: map['senderId'] ?? '',
         senderEmail: map['senderEmail'] ?? '',
@@ -40,6 +43,27 @@ class Message {
       'type': type
     };
   }
+
+  Message copyWith(
+      {String? id,
+      String? senderName,
+      String? senderId,
+      String? senderEmail,
+      String? receiverId,
+      String? message,
+      Timestamp? timestamp,
+      String? type}) {
+    return Message(
+      id: id ?? this.id,
+      senderName: senderName ?? this.senderName,
+      senderId: senderId ?? this.senderId,
+      senderEmail: senderEmail ?? this.senderEmail,
+      receiverId: receiverId ?? this.receiverId,
+      message: message ?? this.message,
+      timestamp: timestamp ?? this.timestamp,
+      type: type ?? this.type,
+    );
+  }
 }
 
 class FileMessage extends Message {
@@ -47,7 +71,8 @@ class FileMessage extends Message {
   int fileSize;
 
   FileMessage(
-      {required super.senderName,
+      {super.id,
+      required super.senderName,
       required super.senderId,
       required super.senderEmail,
       required super.receiverId,
@@ -57,8 +82,9 @@ class FileMessage extends Message {
       required super.type,
       this.fileSize = 0});
 
-  factory FileMessage.fromMap(Map<String, dynamic> map) {
+  factory FileMessage.fromMap(Map<String, dynamic> map, String docId) {
     return FileMessage(
+        id: docId,
         senderName: map['senderName'] ?? '',
         senderId: map['senderId'] ?? '',
         senderEmail: map['senderEmail'] ?? '',

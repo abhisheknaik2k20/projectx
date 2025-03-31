@@ -1,13 +1,11 @@
 import 'dart:io';
 import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
 import 'package:SwiftTalk/MODELS/Message.dart';
+import 'package:SwiftTalk/MODELS/Message_Bubble.dart';
 import 'package:SwiftTalk/VIEWS/Call_Screen.dart';
-import 'package:SwiftTalk/VIEWS/ImagePage.dart';
 import 'package:SwiftTalk/VIEWS/Profile.dart';
 import 'package:SwiftTalk/VIEWS/Screen1.dart';
-import 'package:SwiftTalk/VIEWS/VideoPlayer.dart';
 import 'package:SwiftTalk/MODELS/User.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -17,7 +15,6 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class WhatsAppChatAppBar extends StatelessWidget
     implements PreferredSizeWidget {
@@ -517,13 +514,13 @@ class WhatsAppMessageList extends StatelessWidget {
         _chatService = chatService;
 
   @override
-  Widget build(BuildContext context) => StreamBuilder(
+  Widget build(BuildContext context) => StreamBuilder<List<dynamic>>(
       stream: _chatService.getMessages(_auth.currentUser!.uid, receiverUid),
-      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+      builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -546,308 +543,15 @@ class WhatsAppMessageList extends StatelessWidget {
             .jumpTo(_scrollController.position.maxScrollExtent));
         return ListView.builder(
             controller: _scrollController,
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) =>
-                _buildMessageItem(snapshot.data!.docs[index]));
+            itemCount: snapshot.data!.length,
+            itemBuilder: (context, index) {
+              if (snapshot.data![index].runtimeType == FileMessage) {
+                return FileMessageBubble(message: snapshot.data![index]);
+              } else {
+                return MessageBubble(message: snapshot.data![index]);
+              }
+            });
       });
-
-  Widget _buildMessageItem(DocumentSnapshot document) {
-    Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-    bool isCurrentUser = data['senderId'] == _auth.currentUser!.uid;
-    String formattedTime =
-        DateFormat('hh:mm a').format((data['timestamp'] as Timestamp).toDate());
-    dynamic messageObj;
-    if (data['type'] == 'text' || data['type'] == 'deleted') {
-      messageObj = Message.fromMap(data);
-    } else {
-      messageObj = FileMessage.fromMap(data);
-    }
-    return GestureDetector(
-        onTap: () => _handleMediaTap(messageObj),
-        onLongPress: () {
-          HapticFeedback.heavyImpact();
-          _showBottomSheetDetails(messageObj, isCurrentUser, document);
-        },
-        child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-            alignment:
-                isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
-            child: Column(
-                crossAxisAlignment: isCurrentUser
-                    ? CrossAxisAlignment.end
-                    : CrossAxisAlignment.start,
-                children: [
-                  Container(
-                      constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.5),
-                      decoration: BoxDecoration(
-                          color: isCurrentUser
-                              ? Colors.green.shade100
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.grey.shade300,
-                                blurRadius: 2,
-                                offset: const Offset(1, 1))
-                          ]),
-                      padding: const EdgeInsets.all(10),
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (!isCurrentUser)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: Text(messageObj.senderName,
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.green.shade800,
-                                        fontSize: 12)),
-                              ),
-                            _getMessageContent(messageObj),
-                            const SizedBox(height: 4),
-                            Align(
-                                alignment: Alignment.bottomRight,
-                                child: Text(formattedTime,
-                                    style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey.shade600)))
-                          ]))
-                ])));
-  }
-
-  Widget _getMessageContent(dynamic message) {
-    switch (message.type) {
-      case "deleted":
-        return Text(message.message,
-            style: const TextStyle(fontSize: 16, color: Colors.grey));
-      case 'text':
-        return Text(message.message, style: const TextStyle(fontSize: 16));
-      case 'Image':
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-              width: 175,
-              height: 175,
-              decoration:
-                  BoxDecoration(borderRadius: BorderRadius.circular(10)),
-              child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: CachedNetworkImage(
-                      imageUrl: message.message,
-                      placeholder: (context, url) => const Center(
-                          child: CircularProgressIndicator(color: Colors.teal)),
-                      errorWidget: (context, url, error) =>
-                          const Center(child: Icon(Icons.error)),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity)))
-        ]);
-      case 'Video':
-      case 'Audio':
-      case 'PDF':
-        final Map<String, List> mediaConfig = {
-          'Video': [
-            Icons.play_circle_fill,
-            Colors.purple,
-            'Video',
-            Colors.purple.shade100
-          ],
-          'Audio': [
-            Icons.audiotrack,
-            Colors.orange,
-            'Audio',
-            Colors.yellow.shade100
-          ],
-          'PDF': [
-            Icons.picture_as_pdf,
-            Colors.red,
-            'PDF Document',
-            Colors.red.shade100
-          ]
-        };
-        final config = mediaConfig[message.type]!;
-        return Container(
-            decoration: BoxDecoration(
-                color: config[3], borderRadius: BorderRadius.circular(10)),
-            padding: const EdgeInsets.all(10),
-            child: Row(children: [
-              Icon(config[0], color: config[1], size: 50),
-              const SizedBox(width: 10),
-              Flexible(
-                  child: Text(config[2],
-                      style: TextStyle(
-                          color: message.type == 'Video'
-                              ? Colors.purple
-                              : Colors.black87,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 30),
-                      overflow: TextOverflow.ellipsis))
-            ]));
-      default:
-        return Text(message.message ?? 'Unsupported message type',
-            style: const TextStyle(fontSize: 16));
-    }
-  }
-
-  void _handleMediaTap(dynamic message) {
-    if (message.type == 'text' || message.type == 'deleted') return;
-    switch (message.type) {
-      case 'Image':
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => ImagePage(
-                  fileMessage: message,
-                )));
-        break;
-      case 'Video':
-      case 'Audio':
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => VideoPlayerView(
-                  fileMessage: message,
-                )));
-        break;
-      case 'PDF':
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => SfPdfViewer.network(message.message)));
-        break;
-    }
-  }
-
-  void _showBottomSheetDetails(
-      dynamic message, bool isCurrentUser, DocumentSnapshot document) {
-    showBottomSheet(
-        shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-        context: context,
-        builder: (context) => Container(
-            padding: const EdgeInsets.all(20),
-            height: message.type == 'text' ? 500 : 550,
-            decoration: BoxDecoration(
-                color: Colors.grey.shade900,
-                borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(40),
-                    topRight: Radius.circular(40))),
-            child: Column(children: [
-              Container(
-                  height: 2,
-                  width: 100,
-                  decoration: const BoxDecoration(color: Colors.white)),
-              const SizedBox(height: 20),
-              const Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-                Text('Details',
-                    style: TextStyle(color: Colors.white, fontSize: 40))
-              ]),
-              _infoRow(
-                  Icons.calendar_month,
-                  DateFormat('MMMM-dd').format(message.timestamp.toDate()),
-                  DateFormat('EEEE yyyy').format(message.timestamp.toDate())),
-              const SizedBox(height: 20),
-              _infoRow(_getTypeIcon(message.type), 'Type',
-                  message.type ?? 'Unknown'),
-              const SizedBox(height: 20),
-              if (message.type != 'text' && message.type != 'deleted')
-                _infoRow(Icons.backup, 'BackUp URL', message.message, true),
-              const SizedBox(height: 20),
-              Padding(
-                  padding: const EdgeInsets.only(left: 5, right: 5, bottom: 10),
-                  child: Container(
-                      height: 2,
-                      decoration: BoxDecoration(color: Colors.grey.shade700))),
-              const SizedBox(height: 20),
-              _buildButtons(message, isCurrentUser, document)
-            ])));
-  }
-
-  IconData _getTypeIcon(String type) {
-    switch (type) {
-      case 'text':
-        return Icons.message;
-      case 'file':
-        return Icons.file_present;
-      case 'deleted':
-        return Icons.delete_forever;
-      default:
-        return Icons.help_outline;
-    }
-  }
-
-  Widget _infoRow(IconData icon, String title, String value,
-          [bool isUrl = false]) =>
-      Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-        Icon(icon, size: 50, color: Colors.teal.shade400),
-        const SizedBox(width: 10),
-        Flexible(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title,
-              style: const TextStyle(fontSize: 25, color: Colors.white)),
-          isUrl
-              ? GestureDetector(
-                  onTap: () {},
-                  child: Text(value,
-                      style:
-                          TextStyle(fontSize: 18, color: Colors.teal.shade400),
-                      softWrap: true,
-                      overflow: TextOverflow.ellipsis))
-              : Text(value,
-                  style: TextStyle(fontSize: 18, color: Colors.teal.shade400))
-        ]))
-      ]);
-
-  Widget _buildButtons(
-      dynamic message, bool isCurrentUser, DocumentSnapshot document) {
-    if (message.type == 'deleted') {
-      return SizedBox.shrink();
-    }
-    if (message.type == 'text') {
-      if (isCurrentUser) {
-        return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          _actionButton(
-              Icons.delete, "Delete?", () => _deleteMessage(document)),
-          _actionButton(Icons.edit, "Edit?", () {
-            Navigator.of(context).pop();
-            showEditBox(document);
-          })
-        ]);
-      }
-      return SizedBox.shrink();
-    } else {
-      List<Widget> buttons = [
-        _actionButton(Icons.download, "Save?", () {}),
-      ];
-      if (isCurrentUser) {
-        buttons.add(_actionButton(
-            Icons.delete, "Delete?", () => _deleteMessage(document)));
-      }
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: buttons,
-      );
-    }
-  }
-
-  Widget _actionButton(IconData icon, String label, VoidCallback onPressed) =>
-      Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        IconButton(
-            onPressed: onPressed,
-            icon: Icon(icon, size: 40, color: Colors.teal.shade500)),
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 15))
-      ]);
-
-  Future<void> _deleteMessage(DocumentSnapshot document) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('chat_Rooms')
-          .doc(chatroomid)
-          .collection('messages')
-          .doc(document.id)
-          .update({'message': 'Message Deleted', 'type': 'deleted'});
-      Navigator.of(context).pop();
-    } catch (e) {
-      print(e);
-    }
-  }
 
   void showEditBox(DocumentSnapshot document) async {
     TextEditingController textController = TextEditingController();
