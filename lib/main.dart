@@ -14,6 +14,9 @@ import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+// Flag to track if notification setup is complete
+bool isFlutterLocalNotificationsInitialized = false;
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.android);
@@ -21,8 +24,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("Background message data: ${message.data}");
   print("Background notification: ${message.notification?.title}");
 
-  await setupFlutterNotifications();
-  await showFlutterNotification(message);
+  // Firebase already displays the notification in the background
+  // We should only set up the notification channel, but not show the notification again
+  if (!isFlutterLocalNotificationsInitialized) {
+    await setupFlutterNotifications();
+  }
+
+  // Removed the call to showFlutterNotification here
+  // This prevents duplicate notifications
 }
 
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
@@ -39,7 +48,11 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 
 // Setup method for notification plugin
 Future<void> setupFlutterNotifications() async {
-  // Only initialize once
+  if (isFlutterLocalNotificationsInitialized) {
+    return;
+  }
+
+  // Create the notification channel
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
@@ -67,47 +80,46 @@ Future<void> setupFlutterNotifications() async {
       // Navigate if needed based on payload
     },
   );
+
+  isFlutterLocalNotificationsInitialized = true;
 }
 
 Future<void> showFlutterNotification(RemoteMessage message) async {
+  // Skip showing notification if this is a data-only message
+  // or if we're in the background (system will show it automatically)
+  if (message.notification == null) {
+    return;
+  }
+
   RemoteNotification? notification = message.notification;
   AndroidNotification? android = message.notification?.android;
   print("Showing notification: ${notification?.title}");
-  if (notification != null) {
-    flutterLocalNotificationsPlugin.show(
-        notification.hashCode,
-        notification.title ?? 'SwiftTalk Notification',
-        notification.body ?? 'You have a new notification',
-        NotificationDetails(
-            android: AndroidNotificationDetails(channel.id, channel.name,
-                channelDescription: channel.description,
-                icon: android?.smallIcon ?? 'mipmap/ic_launcher',
-                playSound: true,
-                enableVibration: true,
-                priority: Priority.high,
-                importance: Importance.high),
-            iOS: const DarwinNotificationDetails(
-                presentSound: true,
-                presentAlert: true,
-                presentBadge: true,
-                sound: 'notification_sound.aiff')),
-        payload: message.data.toString());
-  }
+
+  flutterLocalNotificationsPlugin.show(
+      notification.hashCode,
+      notification?.title ?? 'SwiftTalk Notification',
+      notification?.body ?? 'You have a new notification',
+      NotificationDetails(
+          android: AndroidNotificationDetails(channel.id, channel.name,
+              channelDescription: channel.description,
+              icon: android?.smallIcon ?? 'mipmap/ic_launcher',
+              playSound: true,
+              enableVibration: true,
+              priority: Priority.high,
+              importance: Importance.high),
+          iOS: const DarwinNotificationDetails(
+              presentSound: true,
+              presentAlert: true,
+              presentBadge: true,
+              sound: 'notification_sound.aiff')),
+      payload: message.data.toString());
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.android);
-
-  // Set up background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  // Set up notifications
   await setupFlutterNotifications();
-
-  // Request permissions
   await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
@@ -139,6 +151,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Only handle foreground messages with our custom notification handler
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       showFlutterNotification(message);
     });

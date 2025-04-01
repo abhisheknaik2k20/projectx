@@ -201,9 +201,11 @@ class FileMessageBubble extends StatelessWidget {
   final FileMessage message;
   FileMessageBubble({required this.message, super.key});
 
-  final DownloadService downloadService = DownloadService();
+  late DownloadService downloadService;
 
   Future<void> initNotifications() async {
+    downloadService = DownloadService(
+        chatRoomID: ([message.senderId, message.receiverId]..sort()).join("_"));
     await downloadService.initializeNotifications();
   }
 
@@ -337,7 +339,7 @@ class FileMessageBubble extends StatelessWidget {
                           _whatsappActionButton(Icons.download, "Download",
                               () async {
                             Navigator.of(context).pop();
-                            await downloadService.downloadFile(message.message);
+                            await downloadService.downloadFile(message);
                           }, Colors.green[700]!),
                           if (isCurrentUser)
                             _whatsappActionButton(Icons.delete, "Delete",

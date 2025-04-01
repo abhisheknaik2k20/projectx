@@ -168,11 +168,8 @@ class _CallButton extends StatelessWidget {
   final Color backgroundColor;
   final VoidCallback? onPressed;
 
-  const _CallButton({
-    required this.icon,
-    required this.backgroundColor,
-    this.onPressed,
-  });
+  const _CallButton(
+      {required this.icon, required this.backgroundColor, this.onPressed});
 
   @override
   Widget build(BuildContext context) {

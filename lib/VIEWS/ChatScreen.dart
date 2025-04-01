@@ -65,8 +65,10 @@ class WhatsAppChatAppBar extends StatelessWidget
           .push(MaterialPageRoute(builder: (_) => MyHomePage()));
     }
 
-    void viewProfile() => Navigator.push(context,
-        MaterialPageRoute(builder: (_) => ProfilePage(UserUID: receiverUid)));
+    void viewProfile() => Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => ProfilePage(UserUID: receiverUid, isMe: false)));
     return AppBar(
         backgroundColor: Colors.teal,
         leadingWidth: 30,
@@ -77,12 +79,12 @@ class WhatsAppChatAppBar extends StatelessWidget
             stream: db.collection('users').doc(receiverUid).snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return Text(receiverName, overflow: TextOverflow.ellipsis);
+                return Text(receiverName,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white));
               }
-
               final userData = snapshot.data!;
               final isOnline = userData['status'] == 'Online';
-
               return GestureDetector(
                   onTap: viewProfile,
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -103,7 +105,9 @@ class WhatsAppChatAppBar extends StatelessWidget
                           Text(userData['status'] ?? 'Offline',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isOnline ? Colors.blue : Colors.white70,
+                                color: isOnline
+                                    ? Colors.blue[200]
+                                    : Colors.white70,
                                 fontWeight: FontWeight.bold,
                               ),
                               overflow: TextOverflow.ellipsis)
@@ -209,7 +213,7 @@ class _ChatPageContentState extends State<ChatPageContent>
 
   void stopListning() async {
     await _speechToText.stop();
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override

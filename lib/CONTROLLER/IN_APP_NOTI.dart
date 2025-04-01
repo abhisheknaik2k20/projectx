@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:SwiftTalk/MODELS/Message.dart' as msg;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -10,6 +11,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:math';
 
 class DownloadService {
+  final String chatRoomID;
+  DownloadService({required this.chatRoomID});
+
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
@@ -22,9 +26,8 @@ class DownloadService {
 
     const InitializationSettings initializationSettings =
         InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+            android: initializationSettingsAndroid,
+            iOS: initializationSettingsIOS);
 
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
@@ -36,14 +39,18 @@ class DownloadService {
     );
   }
 
+  // Updated permission handler
   Future<bool> storagePermission() async {
     if (Platform.isAndroid) {
       final DeviceInfoPlugin info = DeviceInfoPlugin();
       final AndroidDeviceInfo androidInfo = await info.androidInfo;
       debugPrint('releaseVersion : ${androidInfo.version.release}');
+
       bool havePermission = false;
+
       try {
         final int androidVersion = int.parse(androidInfo.version.release);
+
         if (androidVersion >= 13) {
           final request =
               await [Permission.videos, Permission.photos].request();
@@ -58,30 +65,27 @@ class DownloadService {
         final status = await Permission.storage.request();
         havePermission = status.isGranted;
       }
-      if (!havePermission) await openAppSettings();
+
+      if (!havePermission) {
+        await openAppSettings();
+      }
+
       return havePermission;
     }
     return true;
   }
 
-  Future<String?> downloadFile(String downloadURL,
+  Future<String?> downloadFile(msg.Message message,
       {String? customDirectory}) async {
-    print('Downloading from URL: $downloadURL');
-
+    print('Downloading from URL: ${message.message}');
     try {
       bool permissionGranted = await storagePermission();
       if (!permissionGranted) {
         print("Storage permission denied by user");
         return null;
       }
-      if (Platform.isAndroid) {
-        final status = await Permission.notification.request();
-        if (status.isDenied) {
-          print("Notification permission denied, notifications may not work");
-        }
-      }
       final int notificationId = Random().nextInt(1000);
-      final fileName = path.basename(Uri.parse(downloadURL).path);
+      final fileName = path.basename(Uri.parse(message.message).path);
       String filePath;
       if (customDirectory != null) {
         final directory = Directory(customDirectory);
@@ -94,15 +98,14 @@ class DownloadService {
         if (Platform.isAndroid) {
           try {
             appDir = await getExternalStorageDirectory();
+            appDir = Directory("${appDir?.path}/$chatRoomID/${message.type}");
+            if (!await appDir.exists()) {
+              await appDir.create(recursive: true);
+            }
           } catch (e) {
             print("Failed to get external storage directory: $e");
           }
-
-          final downloadsDir = Directory('/storage/emulated/0/Download');
-          if (!await downloadsDir.exists()) {
-            await downloadsDir.create(recursive: true);
-          }
-          filePath = path.join(downloadsDir.path, fileName);
+          filePath = path.join(appDir?.path ?? '', fileName);
         } else {
           appDir = await getApplicationDocumentsDirectory();
           filePath = path.join(appDir.path, fileName);
@@ -114,20 +117,17 @@ class DownloadService {
           title: 'Downloading $fileName',
           progress: 0,
           maxProgress: 100);
-      final headResponse = await http.head(Uri.parse(downloadURL));
+      final headResponse = await http.head(Uri.parse(message.message));
       final fileSize = int.parse(headResponse.headers['content-length'] ?? '0');
-      final request = http.Request('GET', Uri.parse(downloadURL));
+      final request = http.Request('GET', Uri.parse(message.message));
       final response = await http.Client().send(request);
-
       if (response.statusCode == 200) {
         final file = File(filePath);
         final downloadedBytes = <int>[];
         int totalBytes = 0;
-
         await for (final bytes in response.stream) {
           downloadedBytes.addAll(bytes);
           totalBytes += bytes.length;
-
           final progress =
               fileSize > 0 ? (totalBytes / fileSize * 100).round() : 0;
           await _showProgressNotification(
@@ -136,7 +136,6 @@ class DownloadService {
               progress: progress,
               maxProgress: 100);
         }
-
         await file.writeAsBytes(downloadedBytes);
         print('File downloaded successfully to: $filePath');
         await flutterLocalNotificationsPlugin.cancel(notificationId);
@@ -183,8 +182,10 @@ class DownloadService {
             progress: progress,
             ongoing: true,
             autoCancel: false);
+
     final NotificationDetails notificationDetails =
         NotificationDetails(android: androidDetails);
+
     await flutterLocalNotificationsPlugin.show(notificationId, title,
         'Download in progress: $progress%', notificationDetails);
   }
@@ -200,8 +201,10 @@ class DownloadService {
             importance: Importance.high,
             priority: Priority.high,
             autoCancel: true);
+
     final NotificationDetails notificationDetails =
         NotificationDetails(android: androidDetails);
+
     await flutterLocalNotificationsPlugin.show(
         notificationId, title, body, notificationDetails,
         payload: payload);
@@ -217,8 +220,10 @@ class DownloadService {
             importance: Importance.high,
             priority: Priority.high,
             autoCancel: true);
+
     final NotificationDetails notificationDetails =
         NotificationDetails(android: androidDetails);
+
     await flutterLocalNotificationsPlugin.show(
         notificationId, title, body, notificationDetails);
   }

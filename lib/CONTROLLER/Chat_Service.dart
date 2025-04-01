@@ -1,7 +1,10 @@
 // ignore_for_file:
 import 'dart:io';
+import 'package:SwiftTalk/CONTROLLER/Push_Notifications.dart';
+import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:SwiftTalk/MODELS/Message.dart';
 import 'package:SwiftTalk/MODELS/Notification.dart';
+import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:aws_storage_service/aws_storage_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,6 +30,11 @@ class ChatService extends ChangeNotifier {
           reciverId: message.receiverId,
           message: message.message,
           type: message.type);
+      UserModel? user = await UserRepository().getUserById(message.receiverId);
+      PushNotification.sendNotification(
+          token: user?.fcmToken ?? '',
+          title: "Message from ${message.senderName}",
+          body: message.message);
     } catch (except) {
       print(except);
     }

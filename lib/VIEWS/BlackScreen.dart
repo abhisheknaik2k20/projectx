@@ -39,8 +39,10 @@ class _BlackScreenState extends State<BlackScreen> {
         _buildDrawerItem(
             icon: Icons.account_circle_rounded,
             title: 'Profile',
-            onTap: () =>
-                _navigateTo(ProfilePage(UserUID: _auth.currentUser!.uid))),
+            onTap: () => _navigateTo(ProfilePage(
+                  UserUID: _auth.currentUser!.uid,
+                  isMe: true,
+                ))),
         _buildDrawerItem(
             icon: Icons.computer, title: 'WEB-Login', onTap: () {}),
         _buildDrawerItem(
