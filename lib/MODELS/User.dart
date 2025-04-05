@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
+  String? description;
   final String email;
   final String name;
   final String uid;
@@ -11,16 +12,18 @@ class UserModel {
   final bool isCall;
   final String? fcmToken;
 
-  UserModel(
-      {required this.email,
-      required this.name,
-      required this.uid,
-      required this.photoURL,
-      this.status = 'Online',
-      this.createdAt,
-      required this.username,
-      this.isCall = false,
-      this.fcmToken});
+  UserModel({
+    required this.email,
+    required this.name,
+    required this.uid,
+    required this.photoURL,
+    this.status = 'Online',
+    this.createdAt,
+    required this.username,
+    this.isCall = false,
+    this.fcmToken,
+    this.description,
+  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -32,7 +35,8 @@ class UserModel {
       'createdAt': createdAt ?? FieldValue.serverTimestamp(),
       'username': username,
       'isCall': isCall,
-      'fcmToken': fcmToken
+      'fcmToken': fcmToken,
+      'description': description
     };
   }
 
@@ -46,7 +50,8 @@ class UserModel {
         createdAt: map['createdAt'],
         username: map['username'] ?? '',
         isCall: map['isCall'] ?? false,
-        fcmToken: map['fcmToken']);
+        fcmToken: map['fcmToken'],
+        description: map['description']);
   }
 
   UserModel copyWith(
@@ -60,6 +65,7 @@ class UserModel {
       bool? isCall,
       String? fcmToken}) {
     return UserModel(
+        description: description ?? this.description,
         email: email ?? this.email,
         name: name ?? this.name,
         uid: uid ?? this.uid,

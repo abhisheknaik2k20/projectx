@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:SwiftTalk/API_KEYS.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:googleapis_auth/auth_io.dart' as auth;
 
@@ -22,13 +23,19 @@ class PushNotification {
   static sendNotification(
       {required String token,
       required String title,
-      required String body}) async {
+      required String msg,
+      required String type}) async {
     final String serverKey = await getAccessToken();
     String endPointFirebaseCloudMessaging = FIREBASE_ENDPOINT;
     final Map<String, dynamic> message = {
       'message': {
         'token': token,
-        'notification': {'title': title, 'body': body}
+        'data': {
+          'title': title,
+          'body': msg,
+          'type': type,
+          'callerName': FirebaseAuth.instance.currentUser?.displayName ?? ''
+        },
       }
     };
     final http.Response response = await http.post(

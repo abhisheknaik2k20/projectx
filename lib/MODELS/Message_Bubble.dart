@@ -1,4 +1,4 @@
-import 'package:SwiftTalk/CONTROLLER/IN_APP_NOTI.dart';
+import 'package:SwiftTalk/CONTROLLER/NotificationService.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:math';
@@ -197,21 +197,13 @@ class MessageBubble extends StatelessWidget {
       ]));
 }
 
+// ignore: must_be_immutable
 class FileMessageBubble extends StatelessWidget {
   final FileMessage message;
-  FileMessageBubble({required this.message, super.key});
-
-  late DownloadService downloadService;
-
-  Future<void> initNotifications() async {
-    downloadService = DownloadService(
-        chatRoomID: ([message.senderId, message.receiverId]..sort()).join("_"));
-    await downloadService.initializeNotifications();
-  }
+  const FileMessageBubble({required this.message, super.key});
 
   @override
   Widget build(BuildContext context) {
-    initNotifications();
     final bool isCurrentUser =
         message.senderId == FirebaseAuth.instance.currentUser!.uid;
     final String formattedTime =
@@ -220,8 +212,7 @@ class FileMessageBubble extends StatelessWidget {
         onTap: () => _handleMediaTap(message, context),
         onLongPress: () {
           HapticFeedback.heavyImpact();
-          _showBottomSheetDetails(
-              message, isCurrentUser, context, downloadService);
+          _showBottomSheetDetails(message, isCurrentUser, context);
         },
         child: Container(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -294,8 +285,8 @@ class FileMessageBubble extends StatelessWidget {
         ]));
   }
 
-  void _showBottomSheetDetails(FileMessage message, bool isCurrentUser,
-      BuildContext context, DownloadService downloadService) {
+  void _showBottomSheetDetails(
+      FileMessage message, bool isCurrentUser, BuildContext context) {
     final firebase = FirebaseFirestore.instance
         .collection('chat_Rooms')
         .doc(([message.senderId, message.receiverId]..sort()).join("_"))
@@ -339,7 +330,10 @@ class FileMessageBubble extends StatelessWidget {
                           _whatsappActionButton(Icons.download, "Download",
                               () async {
                             Navigator.of(context).pop();
-                            await downloadService.downloadFile(message);
+                            await NotificationService().downloadFile(
+                                message,
+                                ([message.senderId, message.receiverId]..sort())
+                                    .join("_"));
                           }, Colors.green[700]!),
                           if (isCurrentUser)
                             _whatsappActionButton(Icons.delete, "Delete",

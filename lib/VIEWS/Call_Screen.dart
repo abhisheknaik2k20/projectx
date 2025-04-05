@@ -25,9 +25,8 @@ class _CallScreenState extends State<CallScreen> {
 
   void _handleCallAccept() {
     _toggleVibration(false);
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const MyHomePage()),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (context) => const MyHomePage()));
   }
 
   Future<void> _handleCallReject() async {

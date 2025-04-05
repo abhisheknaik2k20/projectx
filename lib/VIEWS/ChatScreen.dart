@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
+import 'package:SwiftTalk/CONTROLLER/Push_Notifications.dart';
 import 'package:SwiftTalk/MODELS/Message.dart';
 import 'package:SwiftTalk/MODELS/Message_Bubble.dart';
 import 'package:SwiftTalk/VIEWS/Call_Screen.dart';
@@ -18,15 +19,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class WhatsAppChatAppBar extends StatelessWidget
     implements PreferredSizeWidget {
-  final String receiverUid;
-  final String receiverName;
+  final UserModel receiver;
   final String chatroomID;
 
   const WhatsAppChatAppBar(
-      {super.key,
-      required this.receiverUid,
-      required this.receiverName,
-      required this.chatroomID});
+      {super.key, required this.receiver, required this.chatroomID});
 
   @override
   Size get preferredSize => Size.fromHeight(kToolbarHeight + 10);
@@ -36,14 +33,14 @@ class WhatsAppChatAppBar extends StatelessWidget
     final auth = FirebaseAuth.instance;
     final db = FirebaseFirestore.instance;
     final currentUserId = auth.currentUser!.uid;
-    final ids = [currentUserId, receiverUid]..sort();
+    final ids = [currentUserId, receiver.uid]..sort();
     final chatRoomId = ids.join("_");
     void initiateCall() async {
       await db
           .collection('users')
-          .doc(receiverUid)
+          .doc(receiver.uid)
           .collection('call_info')
-          .doc(receiverUid)
+          .doc(receiver.uid)
           .set({
         'key': chatRoomId,
         'reciving_Call': true,
@@ -60,7 +57,13 @@ class WhatsAppChatAppBar extends StatelessWidget
         'reciving_Call': false,
         'sending_Call': true
       });
-      await db.collection('users').doc(receiverUid).update({'isCall': true});
+      await db.collection('users').doc(receiver.uid).update({'isCall': true});
+      PushNotification.sendNotification(
+          token: receiver.fcmToken!,
+          title: "VideoCall",
+          msg:
+              "Call from ${FirebaseAuth.instance.currentUser?.displayName ?? ''}",
+          type: 'VideoCall');
       Navigator.of(context)
           .push(MaterialPageRoute(builder: (_) => MyHomePage()));
     }
@@ -68,7 +71,7 @@ class WhatsAppChatAppBar extends StatelessWidget
     void viewProfile() => Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (_) => ProfilePage(UserUID: receiverUid, isMe: false)));
+            builder: (_) => ProfilePage(UserUID: receiver.uid, isMe: false)));
     return AppBar(
         backgroundColor: Colors.teal,
         leadingWidth: 30,
@@ -76,10 +79,10 @@ class WhatsAppChatAppBar extends StatelessWidget
             icon: Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.of(context).pop()),
         title: StreamBuilder<DocumentSnapshot>(
-            stream: db.collection('users').doc(receiverUid).snapshots(),
+            stream: db.collection('users').doc(receiver.uid).snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return Text(receiverName,
+                return Text(receiver.name,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: Colors.white));
               }
@@ -98,9 +101,11 @@ class WhatsAppChatAppBar extends StatelessWidget
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                          Text(receiverName,
+                          Text(receiver.name,
                               style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
                               overflow: TextOverflow.ellipsis),
                           Text(userData['status'] ?? 'Offline',
                               style: TextStyle(
@@ -149,8 +154,7 @@ class ChatPage extends StatelessWidget {
     }
     return Scaffold(
         appBar: WhatsAppChatAppBar(
-            receiverUid: receiver.uid,
-            receiverName: receiver.name,
+            receiver: receiver,
             chatroomID: ([FirebaseAuth.instance.currentUser!.uid, receiver.uid]
                   ..sort())
                 .join("_")),
@@ -268,7 +272,10 @@ class _ChatPageContentState extends State<ChatPageContent>
           result.files.single.extension?.toLowerCase() == 'png' ||
           result.files.single.extension?.toLowerCase() == 'gif') {
         _uploadService.uploadFileToS3(
-            reciverId: widget.receiver.uid, file: file, fileType: 'Image');
+            reciverId: widget.receiver.uid,
+            file: file,
+            fileType: 'Image',
+            sendNotification: true);
       } else {
         print("Unsupported file type");
       }
@@ -284,7 +291,10 @@ class _ChatPageContentState extends State<ChatPageContent>
           result.files.single.extension?.toLowerCase() == 'mov' ||
           result.files.single.extension?.toLowerCase() == 'avi') {
         _uploadService.uploadFileToS3(
-            reciverId: widget.receiver.uid, file: file, fileType: 'Video');
+            reciverId: widget.receiver.uid,
+            file: file,
+            fileType: 'Video',
+            sendNotification: true);
       }
     }
   }
@@ -300,7 +310,10 @@ class _ChatPageContentState extends State<ChatPageContent>
           result.files.single.extension?.toLowerCase() == 'opus' ||
           result.files.single.extension?.toLowerCase() == 'aac') {
         _uploadService.uploadFileToS3(
-            file: file, fileType: 'Audio', reciverId: widget.receiver.uid);
+            file: file,
+            fileType: 'Audio',
+            reciverId: widget.receiver.uid,
+            sendNotification: true);
       }
     }
   }
@@ -313,7 +326,10 @@ class _ChatPageContentState extends State<ChatPageContent>
       print(result.files.single.name);
       if (result.files.single.extension?.toLowerCase() == 'pdf') {
         _uploadService.uploadFileToS3(
-            file: file, fileType: 'PDF', reciverId: widget.receiver.uid);
+            file: file,
+            fileType: 'PDF',
+            reciverId: widget.receiver.uid,
+            sendNotification: true);
       }
     }
   }

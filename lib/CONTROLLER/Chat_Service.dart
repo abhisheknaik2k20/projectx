@@ -32,9 +32,11 @@ class ChatService extends ChangeNotifier {
           type: message.type);
       UserModel? user = await UserRepository().getUserById(message.receiverId);
       PushNotification.sendNotification(
-          token: user?.fcmToken ?? '',
-          title: "Message from ${message.senderName}",
-          body: message.message);
+        token: user?.fcmToken ?? '',
+        title: "Message from ${message.senderName}",
+        msg: message.message,
+        type: message.type,
+      );
     } catch (except) {
       print(except);
     }
@@ -120,11 +122,11 @@ class S3UploadService {
   String _constructS3Url(String objectKey) =>
       'https://${_credentialsConfig.bucketName}.s3.${_credentialsConfig.region}.amazonaws.com/$objectKey';
 
-  Future<void> uploadFileToS3({
-    required String reciverId,
-    required File file,
-    required String fileType,
-  }) async {
+  Future<String?> uploadFileToS3(
+      {required String reciverId,
+      required File file,
+      required String fileType,
+      required bool sendNotification}) async {
     User user = FirebaseAuth.instance.currentUser!;
     String? result;
     int fileSize = 0;
@@ -134,7 +136,7 @@ class S3UploadService {
       final maxBytes = 50 * 1024 * 1024;
       if (fileSize > maxBytes) {
         debugPrint('File size exceeds maximum limit of 50 MB');
-        return;
+        return null;
       }
       final s3Path =
           '$fileType/${DateTime.now().millisecondsSinceEpoch}_$fileName';
@@ -143,11 +145,7 @@ class S3UploadService {
       } else {
         result = await _uploadSmallFile(file, s3Path);
       }
-    } catch (e) {
-      debugPrint('S3 File Upload Error: $e');
-      return;
-    } finally {
-      if (result != null) {
+      if (result != null && sendNotification) {
         await sendFileMessage(
             message: FileMessage(
                 senderName: user.displayName ?? '',
@@ -166,8 +164,14 @@ class S3UploadService {
             senderName: user.displayName ?? '',
             timestamp: Timestamp.now(),
             type: fileType));
+      } else {
+        return result;
       }
+    } catch (e) {
+      debugPrint('S3 File Upload Error: $e');
+      return null;
     }
+    return null;
   }
 
   Future<void> sendFileMessage({required FileMessage message}) async {

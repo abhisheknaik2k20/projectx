@@ -1,4 +1,5 @@
 import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
@@ -21,6 +22,7 @@ class BlackScreen extends StatefulWidget {
 class _BlackScreenState extends State<BlackScreen> {
   final _drawerController = AdvancedDrawerController();
   final _auth = FirebaseAuth.instance;
+  final _db = FirebaseFirestore.instance.collection('users');
 
   @override
   void dispose() {
@@ -66,13 +68,35 @@ class _BlackScreenState extends State<BlackScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   SizedBox(height: 30),
-                  _auth.currentUser?.photoURL != null
-                      ? CircleAvatar(
-                          backgroundImage:
-                              NetworkImage(_auth.currentUser!.photoURL!),
-                          radius: 45)
-                      : const Icon(Icons.account_circle,
-                          size: 100, color: Colors.white),
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: _db.doc(_auth.currentUser?.uid).snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData && snapshot.data != null) {
+                        // Get the profile URL from Firestore document
+                        final userData =
+                            snapshot.data!.data() as Map<String, dynamic>?;
+                        final profileUrl = userData?['photoURL'] ??
+                            _auth.currentUser?.photoURL;
+
+                        return profileUrl != null
+                            ? CircleAvatar(
+                                backgroundImage: NetworkImage(profileUrl),
+                                radius: 45,
+                              )
+                            : const Icon(Icons.account_circle,
+                                size: 100, color: Colors.white);
+                      } else {
+                        // Show default or loading state
+                        return _auth.currentUser?.photoURL != null
+                            ? CircleAvatar(
+                                backgroundImage:
+                                    NetworkImage(_auth.currentUser!.photoURL!),
+                                radius: 45)
+                            : const Icon(Icons.account_circle,
+                                size: 100, color: Colors.white);
+                      }
+                    },
+                  ),
                   SizedBox(height: 10),
                   Wrap(children: [
                     Text(_auth.currentUser?.displayName ?? 'Unknown User',

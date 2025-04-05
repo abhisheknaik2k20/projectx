@@ -23,6 +23,15 @@ class UserRepository {
         .set(userData.toMap(), SetOptions(merge: true));
   }
 
+  UserModel errorUser() {
+    return UserModel(
+        email: "N/A",
+        name: "UNKNOWN",
+        uid: "INVALID",
+        photoURL: "NULL",
+        username: "UNKNOWN");
+  }
+
   Future<UserModel?> getUserById(String userId) async {
     try {
       DocumentSnapshot doc = await _usersCollection.doc(userId).get();
@@ -46,6 +55,10 @@ class UserRepository {
 
   Future<void> updateUserStatus(String userId, String status) async {
     await _usersCollection.doc(userId).update({'status': status});
+  }
+
+  Future<void> updateUserProfile(String userId, String photoURL) async {
+    await _usersCollection.doc(userId).update({'photoURL': photoURL});
   }
 
   Future<void> updateFcmToken(String userId) async {
