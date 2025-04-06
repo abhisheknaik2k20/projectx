@@ -123,7 +123,7 @@ class S3UploadService {
       'https://${_credentialsConfig.bucketName}.s3.${_credentialsConfig.region}.amazonaws.com/$objectKey';
 
   Future<String?> uploadFileToS3(
-      {required String reciverId,
+      {required String? reciverId,
       required File file,
       required String fileType,
       required bool sendNotification}) async {
@@ -151,7 +151,7 @@ class S3UploadService {
                 senderName: user.displayName ?? '',
                 senderId: user.uid,
                 senderEmail: user.email ?? '',
-                receiverId: reciverId,
+                receiverId: reciverId!,
                 message: result,
                 timestamp: Timestamp.now(),
                 filename: path.basename(file.path),

@@ -11,6 +11,7 @@ class UserModel {
   final String username;
   final bool isCall;
   final String? fcmToken;
+  final List<String>? statusImages;
 
   UserModel({
     required this.email,
@@ -23,6 +24,7 @@ class UserModel {
     this.isCall = false,
     this.fcmToken,
     this.description,
+    this.statusImages,
   });
 
   Map<String, dynamic> toMap() {
@@ -36,44 +38,52 @@ class UserModel {
       'username': username,
       'isCall': isCall,
       'fcmToken': fcmToken,
-      'description': description
+      'description': description,
+      'statusImages': statusImages,
     };
   }
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-        email: map['email'] ?? '',
-        name: map['name'] ?? '',
-        uid: map['uid'] ?? '',
-        photoURL: map['photoURL'] ?? '',
-        status: map['status'] ?? 'Offline',
-        createdAt: map['createdAt'],
-        username: map['username'] ?? '',
-        isCall: map['isCall'] ?? false,
-        fcmToken: map['fcmToken'],
-        description: map['description']);
+      email: map['email'] ?? '',
+      name: map['name'] ?? '',
+      uid: map['uid'] ?? '',
+      photoURL: map['photoURL'] ?? '',
+      status: map['status'] ?? 'Offline',
+      createdAt: map['createdAt'],
+      username: map['username'] ?? '',
+      isCall: map['isCall'] ?? false,
+      fcmToken: map['fcmToken'],
+      description: map['description'],
+      statusImages: List<String>.from(map['statusImages'] ?? []),
+    );
   }
 
-  UserModel copyWith(
-      {String? email,
-      String? name,
-      String? uid,
-      String? photoURL,
-      String? status,
-      Timestamp? createdAt,
-      String? username,
-      bool? isCall,
-      String? fcmToken}) {
+  UserModel copyWith({
+    String? email,
+    String? name,
+    String? uid,
+    String? photoURL,
+    String? status,
+    Timestamp? createdAt,
+    String? username,
+    bool? isCall,
+    String? fcmToken,
+    String? description,
+    List<String>? statusImages,
+  }) {
     return UserModel(
-        description: description ?? this.description,
-        email: email ?? this.email,
-        name: name ?? this.name,
-        uid: uid ?? this.uid,
-        photoURL: photoURL ?? this.photoURL,
-        status: status ?? this.status,
-        createdAt: createdAt ?? this.createdAt,
-        username: username ?? this.username,
-        isCall: isCall ?? this.isCall,
-        fcmToken: fcmToken ?? this.fcmToken);
+      description: description ?? '',
+      email: email ?? this.email,
+      name: name ?? this.name,
+      uid: uid ?? this.uid,
+      photoURL: photoURL ?? this.photoURL,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      username: username ?? this.username,
+      isCall: isCall ?? this.isCall,
+      fcmToken: fcmToken ?? this.fcmToken,
+      statusImages: statusImages ?? this.statusImages,
+    );
   }
 }

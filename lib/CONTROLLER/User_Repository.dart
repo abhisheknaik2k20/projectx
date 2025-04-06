@@ -57,6 +57,56 @@ class UserRepository {
     await _usersCollection.doc(userId).update({'status': status});
   }
 
+  Future<void> updateStatusImages(
+      String userId, List<String> statusImages) async {
+    final docRef = _usersCollection.doc(userId);
+    final docSnapshot = await docRef.get();
+    if (docSnapshot.exists) {
+      final data = docSnapshot.data();
+      if (data != null &&
+          (data as Map<String, dynamic>).containsKey('statusImages')) {
+        await docRef.update({'statusImages': statusImages});
+      } else {
+        await docRef
+            .set({'statusImages': statusImages}, SetOptions(merge: true));
+      }
+    } else {
+      await docRef.set({'statusImages': statusImages});
+    }
+  }
+
+  Future<bool> deleteUserStatusImageByUrl(String imageUrl) async {
+    final docRef = _usersCollection.doc(_auth.currentUser?.uid);
+    final docSnapshot = await docRef.get();
+
+    if (docSnapshot.exists) {
+      final data = docSnapshot.data();
+      if (data is Map<String, dynamic> && data.containsKey('statusImages')) {
+        List<dynamic> statusImages = List.from(data['statusImages']);
+        print('Original statusImages: $statusImages');
+
+        // Check if the image URL exists in the list
+        if (statusImages.contains(imageUrl)) {
+          // Remove the URL directly
+          print('Deleting URL: $imageUrl');
+          statusImages
+              .remove(imageUrl); // This removes the first occurrence of the URL
+          await docRef.update({'statusImages': statusImages});
+          print('Updated statusImages: $statusImages');
+          return true;
+        } else {
+          print('Image URL not found: $imageUrl');
+        }
+      } else {
+        print('statusImages key not found');
+      }
+    } else {
+      print('Document does not exist');
+    }
+
+    return false;
+  }
+
   Future<void> updateUserProfile(String userId, String photoURL) async {
     await _usersCollection.doc(userId).update({'photoURL': photoURL});
   }

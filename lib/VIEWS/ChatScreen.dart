@@ -9,7 +9,6 @@ import 'package:SwiftTalk/VIEWS/Screen1.dart';
 import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:SwiftTalk/CONTROLLER/Chat_Service.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -171,8 +170,7 @@ class ChatPageContent extends StatefulWidget {
   State<ChatPageContent> createState() => _ChatPageContentState();
 }
 
-class _ChatPageContentState extends State<ChatPageContent>
-    with WidgetsBindingObserver {
+class _ChatPageContentState extends State<ChatPageContent> {
   final TextEditingController _messageController = TextEditingController();
   final ChatService _chatService = ChatService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -189,7 +187,6 @@ class _ChatPageContentState extends State<ChatPageContent>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     setStatus('Online');
     ChatroomID =
         ([_auth.currentUser!.uid, widget.receiver.uid]..sort()).join("_");
@@ -224,17 +221,6 @@ class _ChatPageContentState extends State<ChatPageContent>
   void dispose() {
     _scrollController.dispose();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      setStatus('Online');
-    } else {
-      DateTime now = DateTime.now();
-      setStatus('Last seen ${DateFormat('yyyy-MM-dd hh:mm a').format(now)}');
-    }
-    super.didChangeAppLifecycleState(state);
   }
 
   void setStatus(String status) async {
@@ -542,84 +528,267 @@ class WhatsAppMessageList extends StatelessWidget {
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(
-              child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                Icon(Icons.chat, size: 100, color: Colors.teal[300]),
-                const SizedBox(height: 20),
-                Text('No messages yet',
-                    style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.bold)),
-                Text('Start a conversation',
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.bold))
-              ]));
+              child: TweenAnimationBuilder(
+                  duration: const Duration(milliseconds: 800),
+                  tween: Tween<double>(begin: 0, end: 1),
+                  builder: (context, double value, child) {
+                    return Opacity(
+                        opacity: value,
+                        child: Transform.scale(scale: value, child: child));
+                  },
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat, size: 100, color: Colors.teal[300]),
+                        const SizedBox(height: 20),
+                        Text('No messages yet',
+                            style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.bold)),
+                        Text('Start a conversation',
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.bold))
+                      ])));
         }
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollController
-            .jumpTo(_scrollController.position.maxScrollExtent));
+
+        // Scroll to bottom with animation instead of jump
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+
         return ListView.builder(
             controller: _scrollController,
             itemCount: snapshot.data!.length,
+            physics:
+                const BouncingScrollPhysics(), // WhatsApp-like bouncing effect
             itemBuilder: (context, index) {
-              if (snapshot.data![index].runtimeType == FileMessage) {
-                return FileMessageBubble(message: snapshot.data![index]);
-              } else {
-                return MessageBubble(message: snapshot.data![index]);
-              }
+              // Add staggered animation for messages
+              return AnimatedMessageItem(
+                index: index,
+                child: GestureDetector(
+                  onLongPress: () {
+                    HapticFeedback.mediumImpact();
+                    DocumentSnapshot? document =
+                        snapshot.data![index] is DocumentSnapshot
+                            ? snapshot.data![index]
+                            : null;
+                    if (document != null) {
+                      showEditBox(document);
+                    }
+                  },
+                  child: snapshot.data![index].runtimeType == FileMessage
+                      ? FileMessageBubble(message: snapshot.data![index])
+                      : MessageBubble(message: snapshot.data![index]),
+                ),
+              );
             });
       });
 
   void showEditBox(DocumentSnapshot document) async {
     TextEditingController textController = TextEditingController();
-    await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-                backgroundColor: Colors.grey.shade900,
-                title: const Text('Enter The New Message',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white)),
-                actions: <Widget>[
-                  TextFormField(
-                      controller: textController,
-                      style: const TextStyle(color: Colors.white),
-                      cursorColor: Colors.teal,
-                      decoration: InputDecoration(
-                          hintText: ' Enter Message Here',
-                          hintStyle: TextStyle(color: Colors.grey.shade400),
-                          focusedBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white)))),
-                  const SizedBox(height: 10),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    ElevatedButton(
-                        onPressed: () async {
-                          if (textController.text.isNotEmpty) {
-                            Navigator.of(context).pop();
-                            try {
-                              await FirebaseFirestore.instance
-                                  .collection('chat_Rooms')
-                                  .doc(chatroomid)
-                                  .collection('messages')
-                                  .doc(document.id)
-                                  .update({
-                                'message': textController.text,
-                                'type': 'text',
-                                'edit': true
-                              });
-                            } catch (e) {
-                              print(e);
-                            }
-                          }
-                        },
-                        child: Text('Done',
-                            style: TextStyle(
-                                fontSize: 20, color: Colors.teal.shade500)))
-                  ])
-                ]));
+    await showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Edit Message',
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation1, animation2) => Container(),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack,
+        );
+
+        return ScaleTransition(
+          scale: Tween<double>(begin: 0.8, end: 1.0).animate(curvedAnimation),
+          child: FadeTransition(
+            opacity: animation,
+            child: AlertDialog(
+              backgroundColor: Colors.grey.shade900,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: const Text('Enter The New Message',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white)),
+              actions: <Widget>[
+                TextFormField(
+                  controller: textController,
+                  style: const TextStyle(color: Colors.white),
+                  cursorColor: Colors.teal,
+                  decoration: InputDecoration(
+                      hintText: ' Enter Message Here',
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white))),
+                  autofocus: true,
+                ),
+                const SizedBox(height: 10),
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  AnimatedButton(
+                    onPressed: () async {
+                      if (textController.text.isNotEmpty) {
+                        Navigator.of(context).pop();
+                        try {
+                          await FirebaseFirestore.instance
+                              .collection('chat_Rooms')
+                              .doc(chatroomid)
+                              .collection('messages')
+                              .doc(document.id)
+                              .update({
+                            'message': textController.text,
+                            'type': 'text',
+                            'edit': true
+                          });
+                        } catch (e) {
+                          print(e);
+                        }
+                      }
+                    },
+                    child: Text('Done',
+                        style: TextStyle(
+                            fontSize: 20, color: Colors.teal.shade500)),
+                  )
+                ])
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// New widget for animated message items
+class AnimatedMessageItem extends StatelessWidget {
+  final Widget child;
+  final int index;
+
+  const AnimatedMessageItem({
+    Key? key,
+    required this.child,
+    required this.index,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation:
+          ModalRoute.of(context)?.animation ?? const AlwaysStoppedAnimation(1),
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(
+            CurvedAnimation(
+              parent: ModalRoute.of(context)?.animation ??
+                  const AlwaysStoppedAnimation(1),
+              curve: Interval(
+                0.1 * (index % 10) / 10, // Stagger based on index
+                1.0,
+                curve: Curves.easeOut,
+              ),
+            ),
+          ),
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.1, 0),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(
+                parent: ModalRoute.of(context)?.animation ??
+                    const AlwaysStoppedAnimation(1),
+                curve: Interval(
+                  0.1 * (index % 10) / 10, // Stagger based on index
+                  1.0,
+                  curve: Curves.easeOut,
+                ),
+              ),
+            ),
+            child: this.child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+// A button with tap animation
+class AnimatedButton extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onPressed;
+
+  const AnimatedButton({
+    Key? key,
+    required this.child,
+    required this.onPressed,
+  }) : super(key: key);
+
+  @override
+  _AnimatedButtonState createState() => _AnimatedButtonState();
+}
+
+class _AnimatedButtonState extends State<AnimatedButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onPressed();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) => Transform.scale(
+          scale: _scaleAnimation.value,
+          child: ElevatedButton(
+            onPressed: widget.onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade800,
+              foregroundColor: Colors.teal,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: widget.child,
+          ),
+        ),
+      ),
+    );
   }
 }

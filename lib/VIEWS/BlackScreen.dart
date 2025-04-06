@@ -1,4 +1,5 @@
 import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
+import 'package:SwiftTalk/VIEWS/Status.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -157,6 +158,7 @@ class _HomePageState extends State<HomePage> {
   late List<Widget> _pages = [];
   final _navItems = [
     const GButton(icon: Icons.message, text: 'Chat'),
+    const GButton(icon: Icons.group, text: 'Status'),
     const GButton(icon: Icons.notifications_active, text: 'notifications'),
     const GButton(icon: Icons.smart_toy, text: 'BOT')
   ];
@@ -169,6 +171,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _pages = [
       MessagesPage(dc: widget.dc),
+      WhatsAppStatusCommunityScreen(),
       NotificationPage(dc: widget.dc),
       ChatGPTScreen(valueNotifier: valueNotifier)
     ];
@@ -186,7 +189,7 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     final page = _pageController.page;
     if (page == null) return;
-    final distanceToChatBot = (page - 2).abs();
+    final distanceToChatBot = (page - 3).abs();
     if (distanceToChatBot <= 1) {
       final animationValue = distanceToChatBot.clamp(0.0, 1.0);
       setState(() {
