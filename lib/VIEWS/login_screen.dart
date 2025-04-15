@@ -82,8 +82,6 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 40),
-                      _buildLogo(colors),
-                      const SizedBox(height: 24),
                       _buildHeader(colors),
                       const SizedBox(height: 16),
                       Expanded(
@@ -143,13 +141,6 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                                             _buildToggleButton(colors)
                                           ]))))))
                     ]))));
-  }
-
-  Widget _buildLogo(ColorScheme colors) {
-    return ScaleTransition(
-        scale: _scaleAnimation,
-        child: CircleAvatar(
-            radius: 40, backgroundImage: AssetImage('assets/icon.png')));
   }
 
   Widget _buildHeader(ColorScheme colors) {

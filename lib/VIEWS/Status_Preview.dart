@@ -18,22 +18,21 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
   int _currentIndex = 0;
   final UserRepository _userRepository = UserRepository();
   late List<String> _statusImages;
-  bool _isDeleting = false; // Flag to track deletion in progress
+  bool _isDeleting = false;
 
   @override
   void initState() {
     super.initState();
-    // Create a local copy of the status images to manage deletions
-    _statusImages = List<String>.from(widget.user.statusImages ?? []);
+    _statusImages =
+        widget.user.statusImages?.map((status) => status.imageUrl).toList() ??
+            [];
 
     _pageController = PageController();
     _animationController =
         AnimationController(vsync: this, duration: Duration(seconds: 5));
-
     _animationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         _animationController.reset();
-
         if (_currentIndex + 1 < _statusImages.length) {
           setState(() {
             _currentIndex += 1;
@@ -42,14 +41,12 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
           });
           _animationController.forward();
         } else {
-          // Only pop if we're not in the middle of a deletion
           if (!_isDeleting) {
             Navigator.of(context).pop();
           }
         }
       }
     });
-
     _animationController.forward();
   }
 
@@ -67,88 +64,60 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
         _currentIndex >= _statusImages.length) {
       return;
     }
-
-    // Set deleting flag
     setState(() {
       _isDeleting = true;
     });
 
-    // Pause animation while deleting
     _animationController.stop();
 
     final String imageToDelete = _statusImages[_currentIndex];
     final int currentIndexBackup = _currentIndex;
 
-    // Delete from repository
     final success =
         await _userRepository.deleteUserStatusImageByUrl(imageToDelete);
 
     if (success) {
-      // Handle UI updates only if the widget is still mounted
       if (mounted) {
         setState(() {
-          // Remove the image from our local list
           _statusImages.removeAt(currentIndexBackup);
-
-          // Handle the case where we've deleted all images
           if (_statusImages.isEmpty) {
-            // Reset flag before navigating
             _isDeleting = false;
             Navigator.of(context).pop();
             return;
           }
-
-          // Adjust current index if needed
           if (currentIndexBackup >= _statusImages.length) {
             _currentIndex = _statusImages.length - 1;
           } else {
-            // Stay at the same position (which now shows the next image)
             _currentIndex = currentIndexBackup;
             if (_currentIndex >= _statusImages.length) {
               _currentIndex = _statusImages.length - 1;
             }
           }
-
-          // Reset page controller to current index
           _pageController.jumpToPage(_currentIndex);
-
-          // Restart animation
           _animationController.reset();
           _animationController.forward();
-
-          // Reset deleting flag
           _isDeleting = false;
         });
       }
     } else {
       if (mounted) {
-        // Show error if deletion failed
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Failed to delete status image')));
-
-        // Reset deleting flag
         setState(() {
           _isDeleting = false;
         });
 
-        // Resume animation
         _animationController.forward();
       }
     }
   }
 
-  // Handle tap zones in a way that doesn't conflict with buttons
   void _handleTapZone(TapDownDetails details) {
-    // Don't process taps if we're deleting
     if (_isDeleting) return;
 
     final screenWidth = MediaQuery.of(context).size.width;
     final tapX = details.globalPosition.dx;
-
-    // Define a smaller tap zone for left/right navigation
-    // This leaves more space in the center and around the edges for UI buttons
     if (tapX < screenWidth / 4) {
-      // Left 25% of screen
       if (_currentIndex > 0) {
         setState(() {
           _currentIndex -= 1;
@@ -159,7 +128,6 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
         });
       }
     } else if (tapX > 3 * screenWidth / 4) {
-      // Right 25% of screen
       if (_currentIndex + 1 < _statusImages.length) {
         setState(() {
           _currentIndex += 1;
@@ -175,7 +143,6 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
         Navigator.of(context).pop();
       }
     } else {
-      // Center tap - pause/play animation
       if (_animationController.isAnimating) {
         _animationController.stop();
       } else {
@@ -190,7 +157,6 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Main gesture detector for the content area
           GestureDetector(
             onTapDown: _handleTapZone,
             child: PageView.builder(
@@ -235,8 +201,6 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
                   ]);
                 }),
           ),
-
-          // Status bar indicators
           SafeArea(
               child: SizedBox(
                   height: 2,
@@ -313,8 +277,6 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
                       ),
                     )
                   ]))),
-
-          // Loading indicator during deletion
           if (_isDeleting)
             Center(
               child: Container(

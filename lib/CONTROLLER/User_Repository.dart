@@ -2,6 +2,7 @@ import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 
 class UserRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -59,19 +60,27 @@ class UserRepository {
 
   Future<void> updateStatusImages(
       String userId, List<String> statusImages) async {
+    List<Map<String, dynamic>> statusImagesList = statusImages
+        .map((e) => StatusImages(
+                name: _auth.currentUser?.displayName ?? '',
+                imageUrl: e,
+                createdAt: Timestamp.now())
+            .toMap())
+        .toList();
+
     final docRef = _usersCollection.doc(userId);
     final docSnapshot = await docRef.get();
     if (docSnapshot.exists) {
       final data = docSnapshot.data();
       if (data != null &&
           (data as Map<String, dynamic>).containsKey('statusImages')) {
-        await docRef.update({'statusImages': statusImages});
+        await docRef.update({'statusImages': statusImagesList});
       } else {
         await docRef
-            .set({'statusImages': statusImages}, SetOptions(merge: true));
+            .set({'statusImages': statusImagesList}, SetOptions(merge: true));
       }
     } else {
-      await docRef.set({'statusImages': statusImages});
+      await docRef.set({'statusImages': statusImagesList});
     }
   }
 
@@ -82,17 +91,26 @@ class UserRepository {
     if (docSnapshot.exists) {
       final data = docSnapshot.data();
       if (data is Map<String, dynamic> && data.containsKey('statusImages')) {
-        List<dynamic> statusImages = List.from(data['statusImages']);
-        print('Original statusImages: $statusImages');
+        // Get the current status images array
+        List<dynamic> statusImagesList = List.from(data['statusImages']);
+        print('Original statusImages count: ${statusImagesList.length}');
 
-        // Check if the image URL exists in the list
-        if (statusImages.contains(imageUrl)) {
-          // Remove the URL directly
-          print('Deleting URL: $imageUrl');
-          statusImages
-              .remove(imageUrl); // This removes the first occurrence of the URL
-          await docRef.update({'statusImages': statusImages});
-          print('Updated statusImages: $statusImages');
+        // Find the index of the object with the matching imageUrl
+        int indexToRemove = -1;
+        for (int i = 0; i < statusImagesList.length; i++) {
+          Map<String, dynamic> statusImage = statusImagesList[i];
+          if (statusImage['imageUrl'] == imageUrl) {
+            indexToRemove = i;
+            break;
+          }
+        }
+
+        // If found, remove it
+        if (indexToRemove != -1) {
+          print('Deleting image with URL: $imageUrl');
+          statusImagesList.removeAt(indexToRemove);
+          await docRef.update({'statusImages': statusImagesList});
+          print('Updated statusImages count: ${statusImagesList.length}');
           return true;
         } else {
           print('Image URL not found: $imageUrl');
@@ -133,5 +151,43 @@ class UserRepository {
     return _usersCollection.doc(userId).snapshots().map((doc) => doc.exists
         ? UserModel.fromMap(doc.data() as Map<String, dynamic>)
         : null);
+  }
+
+  Future<List<UserModel>> getAllUsersOnce() async {
+    try {
+      final snapshot =
+          await FirebaseFirestore.instance.collection('users').get();
+
+      return snapshot.docs.map((doc) => UserModel.fromMap(doc.data())).toList();
+    } catch (e) {
+      print('Error getting users: $e');
+      return [];
+    }
+  }
+}
+
+extension UserRepositoryE2E on UserRepository {
+  Future<void> saveUserPublicKey(String userId, String publicKeyBase64) async {
+    await FirebaseFirestore.instance
+        .collection('user_public_keys')
+        .doc(userId)
+        .set({'publicKey': publicKeyBase64});
+  }
+
+  Future<String?> getUserPublicKey(String userId) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('user_public_keys')
+          .doc(userId)
+          .get();
+
+      if (doc.exists) {
+        return doc.data()?['publicKey'] as String?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching user public key: $e');
+      return null;
+    }
   }
 }

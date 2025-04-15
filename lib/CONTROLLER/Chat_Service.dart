@@ -32,11 +32,10 @@ class ChatService extends ChangeNotifier {
           type: message.type);
       UserModel? user = await UserRepository().getUserById(message.receiverId);
       PushNotification.sendNotification(
-        token: user?.fcmToken ?? '',
-        title: "Message from ${message.senderName}",
-        msg: message.message,
-        type: message.type,
-      );
+          token: user?.fcmToken ?? '',
+          title: "Message from ${message.senderName}",
+          msg: message.message,
+          type: message.type);
     } catch (except) {
       print(except);
     }
@@ -121,7 +120,6 @@ class S3UploadService {
 
   String _constructS3Url(String objectKey) =>
       'https://${_credentialsConfig.bucketName}.s3.${_credentialsConfig.region}.amazonaws.com/$objectKey';
-
   Future<String?> uploadFileToS3(
       {required String? reciverId,
       required File file,
