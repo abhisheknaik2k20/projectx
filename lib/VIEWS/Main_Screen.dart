@@ -22,47 +22,42 @@ class _MessagesPageState extends State<MessagesPage> {
     super.dispose();
   }
 
-  Widget _buildCustomAppBar() {
-    return Container(
-        decoration: BoxDecoration(color: Colors.teal),
-        child: SafeArea(
-            child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
-                child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(children: [
-                        IconButton(
-                            icon:
-                                Icon(Icons.menu, color: Colors.white, size: 28),
-                            onPressed: () => widget.dc.showDrawer()),
-                        SizedBox(width: 10),
-                        Text("Chats",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold))
-                      ]),
-                      Row(children: [
-                        IconButton(
-                            icon: Icon(Icons.camera_alt,
-                                color: Colors.white, size: 28),
-                            onPressed: () {}),
-                        IconButton(
-                            icon: Icon(Icons.search,
-                                color: Colors.white, size: 28),
-                            onPressed: () {
-                              setState(
-                                  () => _isSearchVisible = !_isSearchVisible);
-                            }),
-                        IconButton(
-                            icon: Icon(Icons.more_vert,
-                                color: Colors.white, size: 28),
-                            onPressed: () {})
-                      ])
-                    ]))));
-  }
+  Widget _buildCustomAppBar() => Container(
+      decoration: BoxDecoration(color: Colors.teal),
+      child: SafeArea(
+          child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(children: [
+                      IconButton(
+                          icon: Icon(Icons.menu, color: Colors.white, size: 28),
+                          onPressed: () => widget.dc.showDrawer()),
+                      SizedBox(width: 10),
+                      Text("Chats",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold))
+                    ]),
+                    Row(children: [
+                      IconButton(
+                          icon: Icon(Icons.camera_alt,
+                              color: Colors.white, size: 28),
+                          onPressed: () {}),
+                      IconButton(
+                          icon:
+                              Icon(Icons.search, color: Colors.white, size: 28),
+                          onPressed: () => setState(
+                              () => _isSearchVisible = !_isSearchVisible)),
+                      IconButton(
+                          icon: Icon(Icons.more_vert,
+                              color: Colors.white, size: 28),
+                          onPressed: () {})
+                    ])
+                  ]))));
 
   Widget _buildSearchBar() => _isSearchVisible
       ? Padding(
@@ -99,9 +94,7 @@ class _MessagesPageState extends State<MessagesPage> {
                   child: CircularProgressIndicator(color: Colors.teal));
             }
             if (!snapshot.hasData) {
-              return const Center(
-                child: Text("No Users Found"),
-              );
+              return const Center(child: Text("No Users Found"));
             }
 
             final users = snapshot.data ?? [];
@@ -128,14 +121,10 @@ class _MessagesPageState extends State<MessagesPage> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(color: Colors.grey.shade600)),
-      onTap: () {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => ChatPage(
-                      receiver: userData,
-                    )));
-      });
+      onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => ChatPage(receiver: userData))));
 
   @override
   Widget build(BuildContext context) => Scaffold(

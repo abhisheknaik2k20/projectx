@@ -134,35 +134,31 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                     ]))));
   }
 
-  Widget _buildHeader(ColorScheme colors) {
-    return FadeTransition(
-        opacity: _fadeAnimation,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(isLogin ? 'Welcome Back!' : 'Create Account',
-              style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: colors.onSurface)),
-          const SizedBox(height: 8),
-          Text(
-              isLogin
-                  ? 'Enter your email address and password to get access your account'
-                  : 'Please enter valid information to access your account.',
-              style: TextStyle(
-                  fontSize: 14, color: colors.onSurface.withOpacity(0.7)))
-        ]));
-  }
+  Widget _buildHeader(ColorScheme colors) => FadeTransition(
+      opacity: _fadeAnimation,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(isLogin ? 'Welcome Back!' : 'Create Account',
+            style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: colors.onSurface)),
+        const SizedBox(height: 8),
+        Text(
+            isLogin
+                ? 'Enter your email address and password to get access your account'
+                : 'Please enter valid information to access your account.',
+            style: TextStyle(
+                fontSize: 14, color: colors.onSurface.withOpacity(0.7)))
+      ]));
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    bool isPassword = false,
-    String? Function(String?)? validator,
-  }) {
+  Widget _buildTextField(
+      {required TextEditingController controller,
+      required String hint,
+      required IconData icon,
+      bool isPassword = false,
+      String? Function(String?)? validator}) {
     return Builder(builder: (context) {
       final colors = Theme.of(context).colorScheme;
-
       return Container(
           decoration: BoxDecoration(
               color: colors.surface,
@@ -179,9 +175,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
               style: TextStyle(color: colors.onSurface),
               onTapOutside: (event) =>
                   FocusManager.instance.primaryFocus?.unfocus(),
-              onTap: () {
-                setState(() => _isFocused = true);
-              },
+              onTap: () => setState(() => _isFocused = true),
               decoration: InputDecoration(
                   hintText: hint,
                   hintStyle:
@@ -207,9 +201,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   errorStyle: TextStyle(color: Colors.red)),
-              onChanged: (value) {
-                setState(() => _isFocused = false);
-              }));
+              onChanged: (_) => setState(() => _isFocused = false)));
     });
   }
 
@@ -242,28 +234,23 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
     });
   }
 
-  Widget _buildForgotPassword(ColorScheme colors) {
-    return Align(
-        alignment: Alignment.center,
-        child: TextButton(
-            onPressed: () {},
-            child: Text('Forgot Password?',
-                style: TextStyle(
-                    color: Colors.teal, fontWeight: FontWeight.bold))));
-  }
+  Widget _buildForgotPassword(ColorScheme colors) => Align(
+      alignment: Alignment.center,
+      child: TextButton(
+          onPressed: () {},
+          child: Text('Forgot Password?',
+              style:
+                  TextStyle(color: Colors.teal, fontWeight: FontWeight.bold))));
 
-  Widget _buildLogo(ColorScheme colors) {
-    return ScaleTransition(
-        scale: _scaleAnimation,
-        child: CircleAvatar(
-            radius: 40, backgroundImage: AssetImage('assets/logo.png')));
-  }
+  Widget _buildLogo(ColorScheme colors) => ScaleTransition(
+      scale: _scaleAnimation,
+      child: CircleAvatar(
+          radius: 40, backgroundImage: AssetImage('assets/logo.png')));
 
   Widget _buildActionButton(ColorScheme colors) {
     final authLoadingProvider =
         Provider.of<AuthLoadingProvider>(context, listen: false);
     AuthManager(loadingProvider: authLoadingProvider);
-
     return ElevatedButton(
         onPressed: () async {
           if (isLogin &&
@@ -306,17 +293,16 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
         child: Image.asset('assets/google.png', width: 175));
   }
 
-  Widget _buildToggleButton(ColorScheme colors) {
-    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Text(
-        isLogin ? 'Don\'t have an account?' : 'Already have an account?',
-        style: TextStyle(color: colors.onSurface.withOpacity(0.7)),
-      ),
-      TextButton(
-          onPressed: _toggleLoginSignup,
-          child: Text(isLogin ? 'Create account' : 'Login',
-              style:
-                  TextStyle(color: Colors.teal, fontWeight: FontWeight.bold)))
-    ]);
-  }
+  Widget _buildToggleButton(ColorScheme colors) =>
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Text(
+          isLogin ? 'Don\'t have an account?' : 'Already have an account?',
+          style: TextStyle(color: colors.onSurface.withOpacity(0.7)),
+        ),
+        TextButton(
+            onPressed: _toggleLoginSignup,
+            child: Text(isLogin ? 'Create account' : 'Login',
+                style:
+                    TextStyle(color: Colors.teal, fontWeight: FontWeight.bold)))
+      ]);
 }

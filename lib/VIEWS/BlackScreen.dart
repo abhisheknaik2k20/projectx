@@ -60,25 +60,22 @@ class _BlackScreenState extends State<BlackScreen> {
           required VoidCallback onTap}) =>
       ListTile(onTap: onTap, leading: Icon(icon), title: Text(title));
 
-  Widget _buildDrawerContent() {
-    return SafeArea(
-        child: ListTileTheme(
-            textColor: Colors.white,
-            iconColor: Colors.white,
-            child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  SizedBox(height: 30),
-                  StreamBuilder<DocumentSnapshot>(
+  Widget _buildDrawerContent() => SafeArea(
+      child: ListTileTheme(
+          textColor: Colors.white,
+          iconColor: Colors.white,
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                SizedBox(height: 30),
+                StreamBuilder<DocumentSnapshot>(
                     stream: _db.doc(_auth.currentUser?.uid).snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.hasData && snapshot.data != null) {
-                        // Get the profile URL from Firestore document
                         final userData =
                             snapshot.data!.data() as Map<String, dynamic>?;
                         final profileUrl = userData?['photoURL'] ??
                             _auth.currentUser?.photoURL;
-
                         return profileUrl != null
                             ? CircleAvatar(
                                 backgroundImage: NetworkImage(profileUrl),
@@ -87,7 +84,6 @@ class _BlackScreenState extends State<BlackScreen> {
                             : const Icon(Icons.account_circle,
                                 size: 100, color: Colors.white);
                       } else {
-                        // Show default or loading state
                         return _auth.currentUser?.photoURL != null
                             ? CircleAvatar(
                                 backgroundImage:
@@ -96,36 +92,31 @@ class _BlackScreenState extends State<BlackScreen> {
                             : const Icon(Icons.account_circle,
                                 size: 100, color: Colors.white);
                       }
-                    },
-                  ),
-                  SizedBox(height: 10),
-                  Wrap(children: [
-                    Text(_auth.currentUser?.displayName ?? 'Unknown User',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20),
-                        overflow: TextOverflow.ellipsis)
-                  ]),
-                  SizedBox(height: 10),
-                  ..._drawerItems,
-                  const Spacer(),
-                  const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Text('Terms of Service | Privacy Policy',
-                          style:
-                              TextStyle(fontSize: 12, color: Colors.white54)))
-                ])));
-  }
+                    }),
+                SizedBox(height: 10),
+                Wrap(children: [
+                  Text(_auth.currentUser?.displayName ?? 'Unknown User',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20),
+                      overflow: TextOverflow.ellipsis)
+                ]),
+                SizedBox(height: 10),
+                ..._drawerItems,
+                const Spacer(),
+                const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text('Terms of Service | Privacy Policy',
+                        style: TextStyle(fontSize: 12, color: Colors.white54)))
+              ])));
 
-  Widget _buildDrawerBackdrop() {
-    return Container(
-        decoration: BoxDecoration(
-            gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.grey.shade800, Colors.black])));
-  }
+  Widget _buildDrawerBackdrop() => Container(
+      decoration: BoxDecoration(
+          gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.grey.shade800, Colors.black])));
 
   @override
   Widget build(BuildContext context) {
@@ -227,37 +218,35 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(backgroundColor: Colors.teal.shade500, toolbarHeight: 0),
-        backgroundColor: Colors.white,
-        body: PageView.builder(
-            controller: _pageController,
-            itemCount: _pages.length,
-            physics: const PageScrollPhysics(),
-            itemBuilder: (context, index) => _pages[index]),
-        bottomNavigationBar: _showNavBar
-            ? AnimatedContainer(
-                duration: const Duration(microseconds: 300),
-                height: 72 * _navBarVal,
-                decoration: BoxDecoration(color: Colors.grey.shade900),
-                child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 10),
-                    child: GNav(
-                        selectedIndex: _selectedIndex,
-                        onTabChange: (index) {
-                          _pageController.animateToPage(index,
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.ease);
-                        },
-                        backgroundColor: Colors.grey.shade900,
-                        color: Colors.white,
-                        activeColor: Colors.white,
-                        tabBackgroundColor: Colors.grey.shade800,
-                        gap: 10,
-                        padding: const EdgeInsets.all(16),
-                        tabs: _navItems)))
-            : const SizedBox.shrink());
-  }
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(backgroundColor: Colors.teal.shade500, toolbarHeight: 0),
+      backgroundColor: Colors.white,
+      body: PageView.builder(
+          controller: _pageController,
+          itemCount: _pages.length,
+          physics: const PageScrollPhysics(),
+          itemBuilder: (context, index) => _pages[index]),
+      bottomNavigationBar: _showNavBar
+          ? AnimatedContainer(
+              duration: const Duration(microseconds: 300),
+              height: 72 * _navBarVal,
+              decoration: BoxDecoration(color: Colors.grey.shade900),
+              child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  child: GNav(
+                      selectedIndex: _selectedIndex,
+                      onTabChange: (index) {
+                        _pageController.animateToPage(index,
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.ease);
+                      },
+                      backgroundColor: Colors.grey.shade900,
+                      color: Colors.white,
+                      activeColor: Colors.white,
+                      tabBackgroundColor: Colors.grey.shade800,
+                      gap: 10,
+                      padding: const EdgeInsets.all(16),
+                      tabs: _navItems)))
+          : const SizedBox.shrink());
 }

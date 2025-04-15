@@ -16,36 +16,34 @@ class NotificationPage extends StatelessWidget {
   final _currentUser = FirebaseAuth.instance.currentUser;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: _buildNotificationList(context));
-  }
+  Widget build(BuildContext context) =>
+      Scaffold(body: _buildNotificationList(context));
 
-  Widget _buildNotificationList(BuildContext context) {
-    return StreamBuilder<List<NotificationClass>>(
-        stream: _notificationRepo.getNotifications(_currentUser!.uid),
-        builder: (context, snapshot) {
-          final notification = snapshot.data ?? [];
-          return CustomScrollView(slivers: [
-            SliverAppBar(
-                backgroundColor: Colors.teal,
-                leading: IconButton(
-                    icon: const Icon(Icons.menu, color: Colors.white),
-                    onPressed: () => dc.showDrawer()),
-                title: const Text('Notifications',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w500)),
-                floating: true),
-            if (notification.isNotEmpty)
-              SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                final document = snapshot.data![index];
-                return _buildNotificationItem(document, context);
-              }, childCount: snapshot.data!.length))
-            else
-              SliverFillRemaining(child: _buildEmptyState())
-          ]);
-        });
-  }
+  Widget _buildNotificationList(BuildContext context) =>
+      StreamBuilder<List<NotificationClass>>(
+          stream: _notificationRepo.getNotifications(_currentUser!.uid),
+          builder: (context, snapshot) {
+            final notification = snapshot.data ?? [];
+            return CustomScrollView(slivers: [
+              SliverAppBar(
+                  backgroundColor: Colors.teal,
+                  leading: IconButton(
+                      icon: const Icon(Icons.menu, color: Colors.white),
+                      onPressed: () => dc.showDrawer()),
+                  title: const Text('Notifications',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w500)),
+                  floating: true),
+              if (notification.isNotEmpty)
+                SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                  final document = snapshot.data![index];
+                  return _buildNotificationItem(document, context);
+                }, childCount: snapshot.data!.length))
+              else
+                SliverFillRemaining(child: _buildEmptyState())
+            ]);
+          });
 
   Widget _buildEmptyState() => Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -71,7 +69,6 @@ class NotificationPage extends StatelessWidget {
       'PDF': Icons.file_copy,
       'text': Icons.chat
     };
-
     return Dismissible(
         key: Key(notification.id!),
         background: Container(
@@ -125,9 +122,7 @@ class NotificationPage extends StatelessWidget {
   }
 }
 
-showCircularProgressBar(BuildContext context) {
-  return showDialog(
-      context: context,
-      builder: (context) =>
-          Center(child: CircularProgressIndicator(color: Colors.teal)));
-}
+showCircularProgressBar(BuildContext context) => showDialog(
+    context: context,
+    builder: (context) =>
+        Center(child: CircularProgressIndicator(color: Colors.teal)));

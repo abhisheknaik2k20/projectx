@@ -54,7 +54,6 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         _remoteRenderer.srcObject = stream;
         if (mounted) setState(() {});
       });
-
       signaling.openUserMedia(_localRenderer, _remoteRenderer);
     } catch (e) {
       print('Signaling setup error: $e');
@@ -150,138 +149,79 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
 
   FirebaseFirestore db = FirebaseFirestore.instance;
   String uid = FirebaseAuth.instance.currentUser!.uid;
-
   Widget _buildVideoCallInterface(Map<String, dynamic>? roomData) {
-    // If call has ended
     if (roomData?['${otherUser}hangup'] == true) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Call Ended',
-              style: TextStyle(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Text('Call Ended',
+            style: TextStyle(
                 fontSize: 24,
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Container(
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(20),
-              child: const Icon(
-                Icons.call_end,
-                color: Colors.white,
-                size: 100,
-              ),
-            ),
-          ],
-        ),
-      );
+                fontWeight: FontWeight.bold)),
+        const SizedBox(height: 20),
+        Container(
+            decoration:
+                const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+            padding: const EdgeInsets.all(20),
+            child: const Icon(Icons.call_end, color: Colors.white, size: 100))
+      ]));
     }
 
-    // Main video call interface
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Remote video (full screen)
-        _buildRemoteVideo(roomData),
-
-        // Local video preview (small corner overlay)
-        Positioned(
-          top: 40,
-          right: 20,
-          child: _buildLocalVideoPreview(),
-        ),
-
-        if (roomData?['${otherUser}Audio'] == false)
-          const Positioned(
+    return Stack(fit: StackFit.expand, children: [
+      _buildRemoteVideo(roomData),
+      Positioned(top: 40, right: 20, child: _buildLocalVideoPreview()),
+      if (roomData?['${otherUser}Audio'] == false)
+        const Positioned(
             top: 40,
             left: 20,
-            child: Icon(
-              Icons.mic_off,
-              color: Colors.white,
-              size: 30,
-            ),
-          ),
-        Positioned(
+            child: Icon(Icons.mic_off, color: Colors.white, size: 30)),
+      Positioned(
           bottom: 30,
           left: 0,
           right: 0,
-          child: _buildCallControlButtons(roomData),
-        ),
-      ],
-    );
+          child: _buildCallControlButtons(roomData))
+    ]);
   }
 
   Widget _buildRemoteVideo(Map<String, dynamic>? roomData) {
-    // Check camera status
     if (roomData?['${otherUser}Cam'] == false) {
       return Container(
-        color: Colors.black,
-        child: const Center(
-          child: Icon(
-            Icons.videocam_off,
-            color: Colors.white,
-            size: 100,
-          ),
-        ),
-      );
+          color: Colors.black,
+          child: const Center(
+              child: Icon(Icons.videocam_off, color: Colors.white, size: 100)));
     }
-
-    // Remote video or connecting indicator
     return roomData?['${otherUser}Cam'] == true
         ? RTCVideoView(_remoteRenderer,
             objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover)
         : Container(
             color: Colors.black,
             child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                   CircularProgressIndicator(color: Colors.teal),
                   const SizedBox(height: 20),
-                  const Text(
-                    'Connecting...',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-          );
+                  const Text('Connecting...',
+                      style: TextStyle(color: Colors.white))
+                ])));
   }
 
-  Widget _buildLocalVideoPreview() {
-    return Container(
+  Widget _buildLocalVideoPreview() => Container(
       width: 120,
       height: 170,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white, width: 2),
-      ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white, width: 2)),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: RTCVideoView(
-          _localRenderer,
-          mirror: true,
-          objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-        ),
-      ),
-    );
-  }
+          borderRadius: BorderRadius.circular(10),
+          child: RTCVideoView(_localRenderer,
+              mirror: true,
+              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover)));
 
-  Widget _buildCallControlButtons(Map<String, dynamic>? roomData) {
-    return Container(
+  Widget _buildCallControlButtons(Map<String, dynamic>? roomData) => Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Mute/Unmute Button
-          _buildCircularButton(
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        _buildCircularButton(
             icon: isMuted ? Icons.mic_off : Icons.mic,
             color: Colors.black54,
             onPressed: () {
@@ -289,11 +229,8 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                 isMuted = !isMuted;
                 isMuted ? _muteMicrophone() : _unmuteMicrophone();
               });
-            },
-          ),
-
-          // Camera On/Off Button
-          _buildCircularButton(
+            }),
+        _buildCircularButton(
             icon: isCamOn ? Icons.videocam : Icons.videocam_off,
             color: Colors.black54,
             onPressed: () {
@@ -302,42 +239,27 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                 FirebaseFirestore.instance
                     .collection('rooms')
                     .doc(AccessKey)
-                    .update({
-                  '${currrentUser}Cam': isCamOn,
-                });
+                    .update({'${currrentUser}Cam': isCamOn});
               });
-            },
-          ),
-
-          // End Call Button
-          _buildCircularButton(
+            }),
+        _buildCircularButton(
             icon: Icons.call_end,
             color: Colors.red,
             onPressed: () async {
               signaling.hangUp(_localRenderer);
               await _endCall();
-            },
-          ),
-        ],
-      ),
-    );
-  }
+            })
+      ]));
 
-  Widget _buildCircularButton({
-    required IconData icon,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
+  Widget _buildCircularButton(
+      {required IconData icon,
+      required Color color,
+      required VoidCallback onPressed}) {
     return Container(
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
-      child: IconButton(
-        icon: Icon(icon, color: Colors.white, size: 30),
-        onPressed: onPressed,
-      ),
-    );
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        child: IconButton(
+            icon: Icon(icon, color: Colors.white, size: 30),
+            onPressed: onPressed));
   }
 
   Future<void> _endCall() async {
@@ -373,14 +295,11 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     } catch (e) {
       print(e.toString());
     }
-
-    // ignore: use_build_context_synchronously
     Navigator.of(context).pop();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder(
+  Widget build(BuildContext context) => StreamBuilder(
       stream: db
           .collection('users')
           .doc(uid)
@@ -401,24 +320,19 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           }
         }
         return Scaffold(
-          backgroundColor: Colors.black,
-          body: StreamBuilder(
-            stream: FirebaseFirestore.instance
-                .collection('rooms')
-                .doc(AccessKey)
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                var roomData = snapshot.data!.data();
-                return _buildVideoCallInterface(roomData);
-              }
-              return const Center(
-                child: CircularProgressIndicator(color: Colors.green),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
+            backgroundColor: Colors.black,
+            body: StreamBuilder(
+                stream: FirebaseFirestore.instance
+                    .collection('rooms')
+                    .doc(AccessKey)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    var roomData = snapshot.data!.data();
+                    return _buildVideoCallInterface(roomData);
+                  }
+                  return const Center(
+                      child: CircularProgressIndicator(color: Colors.green));
+                }));
+      });
 }

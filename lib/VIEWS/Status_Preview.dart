@@ -19,14 +19,12 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
   final UserRepository _userRepository = UserRepository();
   late List<String> _statusImages;
   bool _isDeleting = false;
-
   @override
   void initState() {
     super.initState();
     _statusImages =
         widget.user.statusImages?.map((status) => status.imageUrl).toList() ??
             [];
-
     _pageController = PageController();
     _animationController =
         AnimationController(vsync: this, duration: Duration(seconds: 5));
@@ -57,25 +55,18 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
     super.dispose();
   }
 
-  // Function to handle image deletion
   Future<void> _deleteCurrentImage() async {
     if (_statusImages.isEmpty ||
         _currentIndex < 0 ||
         _currentIndex >= _statusImages.length) {
       return;
     }
-    setState(() {
-      _isDeleting = true;
-    });
-
+    setState(() => _isDeleting = true);
     _animationController.stop();
-
     final String imageToDelete = _statusImages[_currentIndex];
     final int currentIndexBackup = _currentIndex;
-
     final success =
         await _userRepository.deleteUserStatusImageByUrl(imageToDelete);
-
     if (success) {
       if (mounted) {
         setState(() {
@@ -103,10 +94,7 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Failed to delete status image')));
-        setState(() {
-          _isDeleting = false;
-        });
-
+        setState(() => _isDeleting = false);
         _animationController.forward();
       }
     }
@@ -114,7 +102,6 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
 
   void _handleTapZone(TapDownDetails details) {
     if (_isDeleting) return;
-
     final screenWidth = MediaQuery.of(context).size.width;
     final tapX = details.globalPosition.dx;
     if (tapX < screenWidth / 4) {
@@ -131,11 +118,8 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
       if (_currentIndex + 1 < _statusImages.length) {
         setState(() {
           _currentIndex += 1;
-          _pageController.animateToPage(
-            _currentIndex,
-            duration: Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
+          _pageController.animateToPage(_currentIndex,
+              duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
           _animationController.reset();
           _animationController.forward();
         });
@@ -152,20 +136,16 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          GestureDetector(
+      body: Stack(children: [
+        GestureDetector(
             onTapDown: _handleTapZone,
             child: PageView.builder(
                 controller: _pageController,
                 physics: NeverScrollableScrollPhysics(),
                 itemCount: _statusImages.length,
-                onPageChanged: (index) {
-                  setState(() => _currentIndex = index);
-                },
+                onPageChanged: (index) => setState(() => _currentIndex = index),
                 itemBuilder: (context, index) {
                   final String imageUrl = _statusImages[index];
                   return Stack(alignment: Alignment.center, children: [
@@ -199,59 +179,52 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
                               const Center(
                                   child: Icon(Icons.error, color: Colors.red)))
                   ]);
-                }),
-          ),
-          SafeArea(
-              child: SizedBox(
-                  height: 2,
-                  child: Row(
-                      children: List.generate(
-                          _statusImages.length,
-                          (index) => Expanded(
-                              child: Container(
-                                  margin: EdgeInsets.symmetric(horizontal: 2),
-                                  decoration: BoxDecoration(
+                })),
+        SafeArea(
+            child: SizedBox(
+                height: 2,
+                child: Row(
+                    children: List.generate(
+                        _statusImages.length,
+                        (index) => Expanded(
+                            child: Container(
+                                margin: EdgeInsets.symmetric(horizontal: 2),
+                                decoration: BoxDecoration(
                                     color: index < _currentIndex
                                         ? Colors.white
                                         : index == _currentIndex
                                             ? Colors.grey.withOpacity(0.5)
-                                            : Colors.white.withOpacity(0.2),
-                                  ),
-                                  child: index == _currentIndex
-                                      ? AnimatedBuilder(
-                                          animation: _animationController,
-                                          builder: (context, child) {
-                                            return FractionallySizedBox(
-                                                widthFactor:
-                                                    _animationController.value,
-                                                alignment: Alignment.centerLeft,
-                                                child: Container(
-                                                    color: Colors.white));
-                                          })
-                                      : null)))))),
-          SafeArea(
-              child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(children: [
-                    CircleAvatar(
-                        backgroundImage: widget.user.photoURL.startsWith('http')
-                            ? NetworkImage(widget.user.photoURL)
-                                as ImageProvider
-                            : AssetImage(widget.user.photoURL),
-                        radius: 20),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        widget.user.name,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
+                                            : Colors.white.withOpacity(0.2)),
+                                child: index == _currentIndex
+                                    ? AnimatedBuilder(
+                                        animation: _animationController,
+                                        builder: (context, child) {
+                                          return FractionallySizedBox(
+                                              widthFactor:
+                                                  _animationController.value,
+                                              alignment: Alignment.centerLeft,
+                                              child: Container(
+                                                  color: Colors.white));
+                                        })
+                                    : null)))))),
+        SafeArea(
+            child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(children: [
+                  CircleAvatar(
+                      backgroundImage: widget.user.photoURL.startsWith('http')
+                          ? NetworkImage(widget.user.photoURL) as ImageProvider
+                          : AssetImage(widget.user.photoURL),
+                      radius: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                      child: Text(widget.user.name,
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16))),
+                  GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () {}, // Empty to just block propagation
                       child: IconButton(
@@ -264,42 +237,27 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
                                 print("DELETE TAPPED");
                                 _deleteCurrentImage();
                               },
-                      ),
-                    ),
-                    GestureDetector(
+                      )),
+                  GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () {},
                       child: IconButton(
-                        icon: Icon(Icons.close, color: Colors.white),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    )
-                  ]))),
-          if (_isDeleting)
-            Center(
+                          icon: Icon(Icons.close, color: Colors.white),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          }))
+                ]))),
+        if (_isDeleting)
+          Center(
               child: Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
                     CircularProgressIndicator(color: Colors.white),
                     SizedBox(height: 12),
-                    Text(
-                      'Deleting...',
-                      style: TextStyle(color: Colors.white),
-                    )
-                  ],
-                ),
-              ),
-            )
-        ],
-      ),
-    );
-  }
+                    Text('Deleting...', style: TextStyle(color: Colors.white))
+                  ])))
+      ]));
 }
