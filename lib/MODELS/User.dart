@@ -13,19 +13,18 @@ class UserModel {
   final String? fcmToken;
   final List<StatusImages>? statusImages;
 
-  UserModel({
-    required this.email,
-    required this.name,
-    required this.uid,
-    required this.photoURL,
-    this.status = 'Online',
-    this.createdAt,
-    required this.username,
-    this.isCall = false,
-    this.fcmToken,
-    this.description,
-    this.statusImages,
-  });
+  UserModel(
+      {required this.email,
+      required this.name,
+      required this.uid,
+      required this.photoURL,
+      this.status = 'Online',
+      this.createdAt,
+      required this.username,
+      this.isCall = false,
+      this.fcmToken,
+      this.description,
+      this.statusImages});
 
   Map<String, dynamic> toMap() {
     return {
@@ -39,7 +38,7 @@ class UserModel {
       'isCall': isCall,
       'fcmToken': fcmToken,
       'description': description,
-      'statusImages': statusImages,
+      'statusImages': statusImages
     };
   }
 

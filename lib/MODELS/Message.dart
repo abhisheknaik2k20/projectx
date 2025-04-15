@@ -54,15 +54,14 @@ class Message {
       Timestamp? timestamp,
       String? type}) {
     return Message(
-      id: id ?? this.id,
-      senderName: senderName ?? this.senderName,
-      senderId: senderId ?? this.senderId,
-      senderEmail: senderEmail ?? this.senderEmail,
-      receiverId: receiverId ?? this.receiverId,
-      message: message ?? this.message,
-      timestamp: timestamp ?? this.timestamp,
-      type: type ?? this.type,
-    );
+        id: id ?? this.id,
+        senderName: senderName ?? this.senderName,
+        senderId: senderId ?? this.senderId,
+        senderEmail: senderEmail ?? this.senderEmail,
+        receiverId: receiverId ?? this.receiverId,
+        message: message ?? this.message,
+        timestamp: timestamp ?? this.timestamp,
+        type: type ?? this.type);
   }
 }
 
@@ -100,52 +99,5 @@ class FileMessage extends Message {
   Map<String, dynamic> toMap() {
     final baseMap = super.toMap();
     return {...baseMap, 'filename': filename, 'fileSize': fileSize};
-  }
-}
-
-// Extended Message model to handle encryption
-class EncryptedMessage extends Message {
-  final bool isEncrypted;
-
-  EncryptedMessage({
-    required String senderName,
-    required String senderId,
-    required String senderEmail,
-    required String receiverId,
-    required String message,
-    required Timestamp timestamp,
-    required String type,
-    this.isEncrypted = true,
-    String? id,
-  }) : super(
-          senderName: senderName,
-          senderId: senderId,
-          senderEmail: senderEmail,
-          receiverId: receiverId,
-          message: message,
-          timestamp: timestamp,
-          type: type,
-          id: id,
-        );
-
-  @override
-  Map<String, dynamic> toMap() {
-    final map = super.toMap();
-    map['isEncrypted'] = isEncrypted;
-    return map;
-  }
-
-  factory EncryptedMessage.fromMap(Map<String, dynamic> map, String id) {
-    return EncryptedMessage(
-      senderName: map['senderName'] ?? '',
-      senderId: map['senderId'] ?? '',
-      senderEmail: map['senderEmail'] ?? '',
-      receiverId: map['receiverId'] ?? '',
-      message: map['message'] ?? '',
-      timestamp: map['timestamp'] ?? Timestamp.now(),
-      type: map['type'] ?? 'text',
-      isEncrypted: map['isEncrypted'] ?? false,
-      id: id,
-    );
   }
 }

@@ -11,7 +11,6 @@ class Community {
   final String createdBy;
   final DateTime createdAt;
   final List<UserModel> members;
-
   Community(
       {required this.id,
       required this.name,
@@ -22,18 +21,14 @@ class Community {
       required this.createdBy,
       required this.createdAt,
       required this.members});
-
   factory Community.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
-    // Handle timestamps
     DateTime lastActivity;
     if (data['lastActivity'] != null) {
       lastActivity = (data['lastActivity'] as Timestamp).toDate();
     } else {
       lastActivity = DateTime.now();
     }
-
     DateTime createdAt;
     if (data['createdAt'] != null) {
       createdAt = (data['createdAt'] as Timestamp).toDate();
@@ -41,7 +36,6 @@ class Community {
       createdAt = DateTime.now();
     }
 
-    // Handle members list
     List<UserModel> members = [];
     if (data['members'] != null && data['members'] is List) {
       members = (data['members'] as List).map((memberData) {
@@ -74,7 +68,6 @@ class Community {
     };
   }
 
-  // Helper method to update community with new data
   Community copyWith(
       {String? name,
       String? description,
@@ -96,7 +89,6 @@ class Community {
         members: members ?? this.members);
   }
 
-  // Helper method to add a member to the community
   Community addMember(UserModel user) {
     if (members.any((member) => member.uid == user.uid)) {
       return this;
@@ -109,7 +101,6 @@ class Community {
         lastActivity: DateTime.now());
   }
 
-  // Helper method to remove a member from the community
   Community removeMember(String userId) {
     List<UserModel> updatedMembers =
         members.where((member) => member.uid != userId).toList();

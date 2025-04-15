@@ -11,25 +11,23 @@ class NotificationClass {
   final Timestamp timestamp;
   final String type;
 
-  NotificationClass({
-    this.id,
-    required this.message,
-    required this.reciverId,
-    required this.senderId,
-    required this.senderName,
-    required this.timestamp,
-    required this.type,
-  });
+  NotificationClass(
+      {this.id,
+      required this.message,
+      required this.reciverId,
+      required this.senderId,
+      required this.senderName,
+      required this.timestamp,
+      required this.type});
   factory NotificationClass.fromMap(Map<String, dynamic> map, String docId) {
     return NotificationClass(
-      id: docId,
-      message: map['message'] ?? '',
-      reciverId: map['reciverId'] ?? '',
-      senderId: map['senderId'] ?? '',
-      senderName: map['senderName'] ?? '',
-      timestamp: map['timestamp'],
-      type: map['type'] ?? '',
-    );
+        id: docId,
+        message: map['message'] ?? '',
+        reciverId: map['reciverId'] ?? '',
+        senderId: map['senderId'] ?? '',
+        senderName: map['senderName'] ?? '',
+        timestamp: map['timestamp'],
+        type: map['type'] ?? '');
   }
   Map<String, dynamic> toMap() {
     return {
@@ -38,28 +36,26 @@ class NotificationClass {
       'senderId': senderId,
       'senderName': senderName,
       'timestamp': timestamp,
-      'type': type,
+      'type': type
     };
   }
 
-  NotificationClass copyWith({
-    String? id,
-    String? message,
-    String? reciverId,
-    String? senderId,
-    String? senderName,
-    Timestamp? timestamp,
-    String? type,
-  }) {
+  NotificationClass copyWith(
+      {String? id,
+      String? message,
+      String? reciverId,
+      String? senderId,
+      String? senderName,
+      Timestamp? timestamp,
+      String? type}) {
     return NotificationClass(
-      id: id ?? this.id,
-      message: message ?? this.message,
-      reciverId: reciverId ?? this.reciverId,
-      senderId: senderId ?? this.senderId,
-      senderName: senderName ?? this.senderName,
-      timestamp: timestamp ?? this.timestamp,
-      type: type ?? this.type,
-    );
+        id: id ?? this.id,
+        message: message ?? this.message,
+        reciverId: reciverId ?? this.reciverId,
+        senderId: senderId ?? this.senderId,
+        senderName: senderName ?? this.senderName,
+        timestamp: timestamp ?? this.timestamp,
+        type: type ?? this.type);
   }
 }
 
