@@ -568,28 +568,28 @@ class WhatsAppMessageList extends StatelessWidget {
         return ListView.builder(
             controller: _scrollController,
             itemCount: snapshot.data!.length,
-            physics:
-                const BouncingScrollPhysics(), // WhatsApp-like bouncing effect
+            physics: const BouncingScrollPhysics(),
             itemBuilder: (context, index) {
-              // Add staggered animation for messages
               return AnimatedMessageItem(
-                index: index,
-                child: GestureDetector(
-                  onLongPress: () {
-                    HapticFeedback.mediumImpact();
-                    DocumentSnapshot? document =
-                        snapshot.data![index] is DocumentSnapshot
-                            ? snapshot.data![index]
-                            : null;
-                    if (document != null) {
-                      showEditBox(document);
-                    }
-                  },
-                  child: snapshot.data![index].runtimeType == FileMessage
-                      ? FileMessageBubble(message: snapshot.data![index])
-                      : MessageBubble(message: snapshot.data![index]),
-                ),
-              );
+                  index: index,
+                  child: GestureDetector(
+                      onLongPress: () {
+                        HapticFeedback.mediumImpact();
+                        DocumentSnapshot? document =
+                            snapshot.data![index] is DocumentSnapshot
+                                ? snapshot.data![index]
+                                : null;
+                        if (document != null) {
+                          showEditBox(document);
+                        }
+                      },
+                      child: snapshot.data![index].runtimeType == FileMessage
+                          ? FileMessageBubble(
+                              message: snapshot.data![index],
+                              chatRoomID: chatroomid)
+                          : MessageBubble(
+                              message: snapshot.data![index],
+                              chatRoomID: chatroomid)));
             });
       });
 
@@ -730,10 +730,10 @@ class AnimatedButton extends StatefulWidget {
   final VoidCallback onPressed;
 
   const AnimatedButton({
-    Key? key,
+    super.key,
     required this.child,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   _AnimatedButtonState createState() => _AnimatedButtonState();

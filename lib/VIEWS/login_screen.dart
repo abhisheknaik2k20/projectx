@@ -1,6 +1,5 @@
 import 'package:SwiftTalk/CONTROLLER/Login_Logic.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 
 class LoginSignupScreen extends StatefulWidget {
@@ -82,6 +81,8 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 40),
+                      _buildLogo(colors),
+                      const SizedBox(height: 24),
                       _buildHeader(colors),
                       const SizedBox(height: 16),
                       Expanded(
@@ -120,25 +121,15 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                                             _buildActionButton(colors),
                                             if (isLogin)
                                               _buildForgotPassword(colors),
-                                            const SizedBox(height: 24),
-                                            if (isLogin)
-                                              const Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    Text("Or Login with")
-                                                  ]),
+                                            _buildToggleButton(colors),
                                             const SizedBox(height: 24),
                                             if (isLogin)
                                               Row(
                                                   mainAxisAlignment:
                                                       MainAxisAlignment.center,
                                                   children: [
-                                                    _buildGoogleLogin(colors),
-                                                    const SizedBox(width: 20),
-                                                    _buildGitHubLogin(colors)
-                                                  ]),
-                                            _buildToggleButton(colors)
+                                                    _buildGoogleLogin(colors)
+                                                  ])
                                           ]))))))
                     ]))));
   }
@@ -261,6 +252,13 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                     color: Colors.teal, fontWeight: FontWeight.bold))));
   }
 
+  Widget _buildLogo(ColorScheme colors) {
+    return ScaleTransition(
+        scale: _scaleAnimation,
+        child: CircleAvatar(
+            radius: 40, backgroundImage: AssetImage('assets/logo.png')));
+  }
+
   Widget _buildActionButton(ColorScheme colors) {
     final authLoadingProvider =
         Provider.of<AuthLoadingProvider>(context, listen: false);
@@ -305,35 +303,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
     return GestureDetector(
         onTap: () => AuthManager(loadingProvider: authLoadingProvider)
             .implementGoogleSignIn(context),
-        child: Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-                color: Colors.grey.shade900,
-                borderRadius: BorderRadius.circular(12)),
-            child: const Center(
-                child: SizedBox(
-                    width: 30,
-                    height: 30,
-                    child: Icon(FontAwesomeIcons.google,
-                        color: Colors.white, size: 30)))));
-  }
-
-  Widget _buildGitHubLogin(ColorScheme colors) {
-    return GestureDetector(
-        onTap: () async {},
-        child: Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(12)),
-            child: const Center(
-                child: SizedBox(
-                    width: 30,
-                    height: 30,
-                    child: Icon(FontAwesomeIcons.github,
-                        color: Colors.white, size: 30)))));
+        child: Image.asset('assets/google.png', width: 175));
   }
 
   Widget _buildToggleButton(ColorScheme colors) {

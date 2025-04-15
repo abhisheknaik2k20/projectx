@@ -1,22 +1,23 @@
 import 'package:SwiftTalk/CONTROLLER/NotificationService.dart';
+import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'package:path/path.dart' as path;
 import 'dart:math';
 import 'package:SwiftTalk/MODELS/Message.dart';
-import 'package:SwiftTalk/VIEWS/ImagePage.dart';
-import 'package:SwiftTalk/VIEWS/VideoPlayer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
 class MessageBubble extends StatelessWidget {
   final Message message;
-  const MessageBubble({required this.message, super.key});
+  final String chatRoomID;
+  const MessageBubble(
+      {required this.chatRoomID, required this.message, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -200,7 +201,9 @@ class MessageBubble extends StatelessWidget {
 // ignore: must_be_immutable
 class FileMessageBubble extends StatelessWidget {
   final FileMessage message;
-  const FileMessageBubble({required this.message, super.key});
+  final String chatRoomID;
+  const FileMessageBubble(
+      {required this.chatRoomID, required this.message, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -496,25 +499,51 @@ class FileMessageBubble extends StatelessWidget {
     }
   }
 
-  void _handleMediaTap(FileMessage message, BuildContext context) {
-    switch (message.type) {
-      case 'Image':
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => ImagePage(
-                  fileMessage: message,
-                )));
-        break;
-      case 'Video':
-      case 'Audio':
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => VideoPlayerView(
-                  fileMessage: message,
-                )));
-        break;
-      case 'PDF':
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => SfPdfViewer.network(message.message)));
-        break;
+  void _handleMediaTap(FileMessage message, BuildContext context) async {
+    try {
+      final fileName = path.basename(Uri.parse(message.message).path);
+      String? localFilePath;
+      if (Platform.isAndroid) {
+        final appDir = await getExternalStorageDirectory();
+        final fileDir =
+            Directory("${appDir?.path}/$chatRoomID/${message.type}");
+        localFilePath = path.join(fileDir.path, fileName);
+      } else {
+        final appDir = await getApplicationDocumentsDirectory();
+        localFilePath = path.join(appDir.path, fileName);
+      }
+      final localFile = File(localFilePath);
+      if (await localFile.exists()) {
+        debugPrint('File exists locally, opening: $localFilePath');
+        await OpenFile.open(localFilePath);
+      } else {
+        debugPrint('File not found locally, starting download');
+        showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return Center(child: CircularProgressIndicator());
+            });
+        final downloadedPath =
+            await NotificationService().downloadFile(message, chatRoomID);
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+        if (downloadedPath != null) {
+          await OpenFile.open(downloadedPath);
+        } else {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Failed to download file')));
+        }
+      }
+    } catch (error) {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      debugPrint('Error handling media tap: ${error.toString()}');
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening file: ${error.toString()}')));
     }
   }
 
