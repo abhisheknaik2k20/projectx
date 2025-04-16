@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
 import 'package:SwiftTalk/CONTROLLER/Chat_Service.dart';
+import 'package:SwiftTalk/CONTROLLER/Native_Cached_Image.dart';
+import 'package:SwiftTalk/CONTROLLER/Native_Date_Format.dart';
 import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:SwiftTalk/VIEWS/Call_Screen.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
@@ -46,7 +46,7 @@ class _ProfilePageState extends State<ProfilePage>
         if (user?.status is Timestamp) {
           Timestamp timestamp = user?.createdAt as Timestamp;
           formattedDateTime =
-              DateFormat('dd MMM yyyy hh:mm a').format(timestamp.toDate());
+              CustomDateFormat.formatDateTime(timestamp.toDate());
         } else if (user?.status is String) {
           formattedDateTime = user?.status;
         } else {
@@ -208,7 +208,8 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildHeroImage(String? imageUrl) => Hero(
       tag: 'profile-${widget.UserUID}',
-      child: CachedNetworkImage(imageUrl: imageUrl ?? '', fit: BoxFit.cover));
+      child: CustomCachedNetworkImage(
+          imageUrl: imageUrl ?? '', fit: BoxFit.cover));
 
   Widget _buildMediaThumbnail(File file) {
     final fileExt = path.extension(file.path).toLowerCase();

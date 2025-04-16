@@ -1,5 +1,6 @@
 import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
 import 'package:SwiftTalk/CONTROLLER/Login_Logic.dart';
+import 'package:SwiftTalk/CONTROLLER/Native_Date_Format.dart';
 import 'package:SwiftTalk/CONTROLLER/NotificationService.dart';
 import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:SwiftTalk/firebase_options.dart';
 import 'package:SwiftTalk/VIEWS/BlackScreen.dart';
 import 'package:SwiftTalk/VIEWS/Login_Screen.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:vibration/vibration.dart';
 
@@ -74,7 +74,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       super.didChangeAppLifecycleState(state);
       String status = state == AppLifecycleState.resumed
           ? 'Online'
-          : 'Last seen ${DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now())}';
+          : 'Last seen ${CustomDateFormat.formatDateTime(DateTime.now())}';
       if (auth.currentUser?.uid != null) {
         userRepository.updateUserStatus(auth.currentUser!.uid, status);
       }
@@ -84,7 +84,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         state == AppLifecycleState.detached) {
       if (auth.currentUser?.uid != null) {
         userRepository.updateUserStatus(auth.currentUser!.uid,
-            'Last seen ${DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now())}');
+            'Last seen ${CustomDateFormat.formatDateTime(DateTime.now())}');
       }
     }
   }

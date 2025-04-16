@@ -4,7 +4,6 @@ import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:SwiftTalk/MODELS/Community.dart';
 import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:SwiftTalk/VIEWS/Status_Preview.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -249,8 +248,7 @@ class _WhatsAppStatusCommunityScreenState
             Stack(children: [
               CircleAvatar(
                   radius: 30,
-                  backgroundImage:
-                      CachedNetworkImageProvider(_currentUser?.photoURL ?? '')),
+                  backgroundImage: NetworkImage(_currentUser?.photoURL ?? '')),
               Positioned(
                   right: 0,
                   bottom: 0,

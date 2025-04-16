@@ -1,5 +1,5 @@
+import 'package:SwiftTalk/CONTROLLER/Native_Cached_Image.dart';
 import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:SwiftTalk/MODELS/User.dart';
 
@@ -150,13 +150,13 @@ class _StatusPreviewScreenState extends State<StatusPreviewScreen>
                   final String imageUrl = _statusImages[index];
                   return Stack(alignment: Alignment.center, children: [
                     if (imageUrl.startsWith('http'))
-                      CachedNetworkImage(
+                      CustomCachedNetworkImage(
                           imageUrl: imageUrl,
                           imageBuilder: (context, imageProvider) => Container(
                               decoration: BoxDecoration(
                                   image: DecorationImage(
                                       image: imageProvider,
-                                      fit: BoxFit.cover))),
+                                      fit: BoxFit.fitHeight))),
                           placeholder: (context, url) => const Center(
                               child: CircularProgressIndicator(
                                   color: Colors.teal)),

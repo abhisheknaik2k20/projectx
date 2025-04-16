@@ -1,3 +1,5 @@
+import 'package:SwiftTalk/CONTROLLER/Native_Cached_Image.dart';
+import 'package:SwiftTalk/CONTROLLER/Native_Date_Format.dart';
 import 'package:SwiftTalk/CONTROLLER/NotificationService.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
@@ -5,12 +7,10 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'dart:math';
 import 'package:SwiftTalk/MODELS/Message.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -24,7 +24,7 @@ class MessageBubble extends StatelessWidget {
     final bool isCurrentUser =
         message.senderId == FirebaseAuth.instance.currentUser!.uid;
     final String formattedTime =
-        DateFormat('hh:mm a').format((message.timestamp).toDate());
+        CustomDateFormat.formatDateTime((message.timestamp).toDate());
     return GestureDetector(
         onLongPress: () {
           HapticFeedback.heavyImpact();
@@ -114,11 +114,8 @@ class MessageBubble extends StatelessWidget {
                       borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 24),
               _whatsappInfoRow(Icons.person, "From", message.senderName),
-              _whatsappInfoRow(
-                  Icons.access_time,
-                  "Sent",
-                  DateFormat('d MMM yyyy, HH:mm')
-                      .format(message.timestamp.toDate())),
+              _whatsappInfoRow(Icons.access_time, "Sent",
+                  CustomDateFormat.formatDateTime(message.timestamp.toDate())),
               const SizedBox(height: 24),
               message.type != 'deleted'
                   ? Row(
@@ -210,7 +207,7 @@ class FileMessageBubble extends StatelessWidget {
     final bool isCurrentUser =
         message.senderId == FirebaseAuth.instance.currentUser!.uid;
     final String formattedTime =
-        DateFormat('hh:mm a').format((message.timestamp).toDate());
+        CustomDateFormat.formatDateTime((message.timestamp).toDate());
     return GestureDetector(
         onTap: () => _handleMediaTap(message, context),
         onLongPress: () {
@@ -315,11 +312,8 @@ class FileMessageBubble extends StatelessWidget {
                       borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 24),
               _whatsappInfoRow(Icons.person, "From", message.senderName),
-              _whatsappInfoRow(
-                  Icons.access_time,
-                  "Sent",
-                  DateFormat('d MMM yyyy, HH:mm')
-                      .format(message.timestamp.toDate())),
+              _whatsappInfoRow(Icons.access_time, "Sent",
+                  CustomDateFormat.formatDateTime(message.timestamp.toDate())),
               _whatsappInfoRow(
                   Icons.insert_drive_file, "File", message.filename),
               _whatsappInfoRow(Icons.data_usage, "Size", formattedSize),
@@ -403,15 +397,7 @@ class FileMessageBubble extends StatelessWidget {
                   BoxDecoration(borderRadius: BorderRadius.circular(10)),
               child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: CachedNetworkImage(
-                      imageUrl: message.message,
-                      placeholder: (context, url) => const Center(
-                          child: CircularProgressIndicator(color: Colors.teal)),
-                      errorWidget: (context, url, error) =>
-                          const Center(child: Icon(Icons.error)),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity)))
+                  child: CustomCachedNetworkImage(imageUrl: message.message)))
         ]);
       case 'Video':
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

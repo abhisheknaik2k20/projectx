@@ -1,3 +1,4 @@
+import 'package:SwiftTalk/CONTROLLER/Native_Date_Format.dart';
 import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:SwiftTalk/MODELS/Notification.dart';
 import 'package:SwiftTalk/MODELS/User.dart';
@@ -5,7 +6,6 @@ import 'package:SwiftTalk/VIEWS/ChatScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
-import 'package:intl/intl.dart';
 
 class NotificationPage extends StatelessWidget {
   final AdvancedDrawerController dc;
@@ -115,8 +115,8 @@ class NotificationPage extends StatelessWidget {
                   style: TextStyle(fontSize: 16, color: Colors.grey.shade700)),
               const SizedBox(height: 4),
               Text(
-                  DateFormat('MMM dd, yyyy hh:mm a')
-                      .format(notification.timestamp.toDate()),
+                  CustomDateFormat.formatDateTime(
+                      notification.timestamp.toDate()),
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade500))
             ])));
   }

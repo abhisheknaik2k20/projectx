@@ -328,6 +328,15 @@ class _ChatPageContentState extends State<ChatPageContent> {
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 15, vertical: 10)),
                         style: const TextStyle(color: Colors.black87)))),
+        Container(
+            margin: const EdgeInsets.only(left: 8),
+            child: GestureDetector(
+                onTap: sendMessage,
+                child: CircleAvatar(
+                    backgroundColor: Colors.teal,
+                    radius: 22,
+                    child: Icon(isListning ? Icons.mic : Icons.send,
+                        color: Colors.white, size: 22))))
       ]));
 
   void _showAttachmentOptions() {

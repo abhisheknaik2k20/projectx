@@ -78,7 +78,7 @@ class Community {
       DateTime? createdAt,
       List<UserModel>? members}) {
     return Community(
-        id: this.id,
+        id: id,
         name: name ?? this.name,
         description: description ?? this.description,
         imageUrl: imageUrl ?? this.imageUrl,
