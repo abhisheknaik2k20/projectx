@@ -11,7 +11,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
 class MessageBubble extends StatelessWidget {
   final Message message;
@@ -400,59 +399,15 @@ class FileMessageBubble extends StatelessWidget {
                   child: CustomCachedNetworkImage(imageUrl: message.message)))
         ]);
       case 'Video':
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Stack(alignment: Alignment.center, children: [
-            Container(
-                width: 175,
-                height: 175,
-                decoration:
-                    BoxDecoration(borderRadius: BorderRadius.circular(10)),
-                child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: FutureBuilder<String?>(
-                        future: _getVideoThumbnail(message.message),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator(
-                                    color: Colors.purple));
-                          } else if (snapshot.hasError ||
-                              snapshot.data == null) {
-                            return Container(
-                              color: Colors.purple.shade100,
-                              child: const Center(
-                                  child: Icon(Icons.video_library,
-                                      color: Colors.red, size: 50)),
-                            );
-                          } else {
-                            return Image.file(File(snapshot.data!),
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                                errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                  color: Colors.purple.shade100,
-                                  child: const Center(
-                                      child: Icon(Icons.error,
-                                          color: Colors.purple)));
-                            });
-                          }
-                        }))),
-            Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-                child:
-                    const Icon(Icons.play_arrow, color: Colors.white, size: 30))
-          ])
-        ]);
       case 'Audio':
       case 'PDF':
         final Map<String, List> mediaConfig = {
+          'Video': [
+            Icons.video_collection_sharp,
+            Colors.blue,
+            'Video',
+            Colors.blue.shade100
+          ],
           'Audio': [
             Icons.audiotrack,
             Colors.orange,
@@ -478,7 +433,7 @@ class FileMessageBubble extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Icon(config[0], color: config[1], size: 50),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 10)
                 ]));
       default:
         return Text(message.message, style: const TextStyle(fontSize: 16));
@@ -507,9 +462,8 @@ class FileMessageBubble extends StatelessWidget {
         showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (BuildContext context) {
-              return Center(child: CircularProgressIndicator());
-            });
+            builder: (BuildContext context) =>
+                Center(child: CircularProgressIndicator(color: Colors.teal)));
         final downloadedPath =
             await NotificationService().downloadFile(message, chatRoomID);
         if (Navigator.canPop(context)) {
@@ -530,29 +484,6 @@ class FileMessageBubble extends StatelessWidget {
       debugPrint('Error handling media tap: ${error.toString()}');
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error opening file: ${error.toString()}')));
-    }
-  }
-
-  Future<String?> _getVideoThumbnail(String videoUrl) async {
-    try {
-      final Directory tempDir = await getTemporaryDirectory();
-      final String tempPath = tempDir.path;
-      final String thumbnailName =
-          'thumbnail_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final String thumbnailPath = '$tempPath/$thumbnailName';
-      final String? thumbnailFile = await VideoThumbnail.thumbnailFile(
-          video: videoUrl,
-          thumbnailPath: thumbnailPath,
-          imageFormat: ImageFormat.JPEG,
-          maxWidth: 175,
-          quality: 75);
-      if (thumbnailFile == null) {
-        throw Exception('Failed to generate thumbnail');
-      }
-      return thumbnailFile;
-    } catch (e) {
-      print('Error generating video thumbnail: $e');
-      return null;
     }
   }
 }

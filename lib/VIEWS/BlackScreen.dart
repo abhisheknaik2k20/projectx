@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:SwiftTalk/VIEWS/Call_Screen.dart';
 import 'package:SwiftTalk/VIEWS/NotificationPage.dart';
@@ -148,10 +147,11 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   late List<Widget> _pages = [];
   final _navItems = [
-    const GButton(icon: Icons.message, text: 'Chat'),
-    const GButton(icon: Icons.group, text: 'Status'),
-    const GButton(icon: Icons.notifications_active, text: 'notifications'),
-    const GButton(icon: Icons.smart_toy, text: 'BOT')
+    const BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Chat'),
+    const BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Status'),
+    const BottomNavigationBarItem(
+        icon: Icon(Icons.notifications_active), label: 'Notifications'),
+    const BottomNavigationBarItem(icon: Icon(Icons.smart_toy), label: 'BOT')
   ];
 
   double _navBarVal = 1.0;
@@ -228,25 +228,35 @@ class _HomePageState extends State<HomePage> {
           itemBuilder: (context, index) => _pages[index]),
       bottomNavigationBar: _showNavBar
           ? AnimatedContainer(
-              duration: const Duration(microseconds: 300),
+              duration: const Duration(milliseconds: 100),
               height: 72 * _navBarVal,
-              decoration: BoxDecoration(color: Colors.grey.shade900),
-              child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  child: GNav(
-                      selectedIndex: _selectedIndex,
-                      onTabChange: (index) {
-                        _pageController.animateToPage(index,
-                            duration: const Duration(milliseconds: 500),
-                            curve: Curves.ease);
-                      },
-                      backgroundColor: Colors.grey.shade900,
-                      color: Colors.white,
-                      activeColor: Colors.white,
-                      tabBackgroundColor: Colors.grey.shade800,
-                      gap: 10,
-                      padding: const EdgeInsets.all(16),
-                      tabs: _navItems)))
+              color: Colors.grey.shade900,
+              child: ClipRect(
+                  child: OverflowBox(
+                      maxHeight: 72,
+                      minHeight: 0,
+                      alignment: Alignment.center,
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                            splashColor: Colors.transparent,
+                            highlightColor: Colors.transparent),
+                        child: BottomNavigationBar(
+                            currentIndex: _selectedIndex,
+                            onTap: (index) => _pageController.animateToPage(
+                                index,
+                                duration: const Duration(milliseconds: 500),
+                                curve: Curves.ease),
+                            backgroundColor: Colors.grey.shade900,
+                            unselectedItemColor: Colors.grey,
+                            selectedItemColor: Colors.white,
+                            showSelectedLabels: true,
+                            showUnselectedLabels: true,
+                            type: BottomNavigationBarType.fixed,
+                            selectedFontSize: 12,
+                            unselectedFontSize: 12,
+                            iconSize: 24,
+                            elevation: 0,
+                            items: _navItems),
+                      ))))
           : const SizedBox.shrink());
 }

@@ -1,6 +1,5 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'dart:io';
@@ -14,7 +13,8 @@ class ChatGPTScreen extends StatefulWidget {
   State<ChatGPTScreen> createState() => _ChatGPTScreenState();
 }
 
-class _ChatGPTScreenState extends State<ChatGPTScreen> {
+class _ChatGPTScreenState extends State<ChatGPTScreen>
+    with TickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
@@ -23,6 +23,11 @@ class _ChatGPTScreenState extends State<ChatGPTScreen> {
   File? _imageFile;
   bool _showImagePreview = false;
   FilePickerResult? result;
+
+  // Animations
+  late AnimationController _fadeController;
+  late AnimationController _dotAnimationController;
+  late List<Animation<double>> _dotAnimations;
 
   @override
   void initState() {
@@ -36,6 +41,48 @@ class _ChatGPTScreenState extends State<ChatGPTScreen> {
         text:
             "Hello! I'm your AI assistant powered by Google Gemini. How can I help you today?",
         isUser: false));
+
+    // Initialize animation controllers
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _dotAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1800),
+      vsync: this,
+    )..repeat();
+
+    // Create dot animations with different delays
+    _dotAnimations = List.generate(3, (index) {
+      final beginTime = index * 0.2;
+      return TweenSequence<double>([
+        TweenSequenceItem(
+          tween: Tween<double>(begin: 0.5, end: 1.0)
+              .chain(CurveTween(curve: Curves.easeInOut)),
+          weight: 50,
+        ),
+        TweenSequenceItem(
+          tween: Tween<double>(begin: 1.0, end: 0.5)
+              .chain(CurveTween(curve: Curves.easeInOut)),
+          weight: 50,
+        ),
+      ]).animate(
+        CurvedAnimation(
+          parent: _dotAnimationController,
+          curve: Interval(beginTime, beginTime + 0.6, curve: Curves.linear),
+        ),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _dotAnimationController.dispose();
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _pickImage() async {
@@ -133,9 +180,12 @@ class _ChatGPTScreenState extends State<ChatGPTScreen> {
                 controller: _scrollController,
                 itemCount: _messages.length + (_isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
-                  return index < _messages.length
-                      ? _buildMessageItem(_messages[index])
-                      : _buildLoadingIndicator();
+                  if (index < _messages.length) {
+                    _fadeController.forward(from: 0.0);
+                    return _buildMessageItem(_messages[index]);
+                  } else {
+                    return _buildLoadingIndicator();
+                  }
                 })),
         if (_imageFile != null && _showImagePreview) _buildImagePreview(),
         _buildMessageInput()
@@ -153,85 +203,111 @@ class _ChatGPTScreenState extends State<ChatGPTScreen> {
             onPressed: () => setState(() => _imageFile = null))
       ]));
 
-  Widget _buildMessageItem(ChatMessage message) => Align(
+  Widget _buildMessageItem(ChatMessage message) {
+    final slideAnimation = Tween<Offset>(
+      begin: Offset(message.isUser ? 0.1 : -0.1, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    ));
+
+    final fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    ));
+
+    return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              padding: const EdgeInsets.all(12),
-              constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.75),
-              decoration: BoxDecoration(
-                  color: message.isUser
-                      ? Colors.teal.shade100
-                      : Colors.grey.shade200,
-                  borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(16),
-                      topRight: const Radius.circular(16),
-                      bottomLeft: message.isUser
-                          ? const Radius.circular(16)
-                          : Radius.zero,
-                      bottomRight: message.isUser
-                          ? Radius.zero
-                          : const Radius.circular(16))),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (message.imageFile != null)
-                      Image.file(message.imageFile!,
-                          width: double.infinity, fit: BoxFit.cover),
-                    MarkdownWidget(
-                        data: message.text,
-                        shrinkWrap: true,
-                        config: MarkdownConfig(configs: [
-                          CodeConfig(
-                              style: TextStyle(
-                                  backgroundColor: Colors.grey.shade100,
-                                  fontFamily: 'monospace'))
-                        ]))
-                  ]))
-          .animate()
-          .fade()
-          .slideX(begin: message.isUser ? 0.1 : -0.1, duration: 300.ms));
+      child: SlideTransition(
+        position: slideAnimation,
+        child: FadeTransition(
+          opacity: fadeAnimation,
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            padding: const EdgeInsets.all(12),
+            constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.75),
+            decoration: BoxDecoration(
+                color: message.isUser
+                    ? Colors.teal.shade100
+                    : Colors.grey.shade200,
+                borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(16),
+                    topRight: const Radius.circular(16),
+                    bottomLeft: message.isUser
+                        ? const Radius.circular(16)
+                        : Radius.zero,
+                    bottomRight: message.isUser
+                        ? Radius.zero
+                        : const Radius.circular(16))),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (message.imageFile != null)
+                    Image.file(message.imageFile!,
+                        width: double.infinity, fit: BoxFit.cover),
+                  MarkdownWidget(
+                      data: message.text,
+                      shrinkWrap: true,
+                      config: MarkdownConfig(configs: [
+                        CodeConfig(
+                            style: TextStyle(
+                                backgroundColor: Colors.grey.shade100,
+                                fontFamily: 'monospace'))
+                      ]))
+                ]),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildLoadingIndicator() => Align(
       alignment: Alignment.centerLeft,
-      child: Animate(
-          effects: [FadeEffect(duration: 400.ms)],
-          child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                      bottomRight: Radius.circular(16))),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                _buildDot(0),
-                const SizedBox(width: 4),
-                _buildDot(1),
-                const SizedBox(width: 4),
-                _buildDot(2)
-              ]))));
+      child: FadeTransition(
+        opacity: _fadeController..forward(),
+        child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                    bottomRight: Radius.circular(16))),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              _buildDot(0),
+              const SizedBox(width: 4),
+              _buildDot(1),
+              const SizedBox(width: 4),
+              _buildDot(2)
+            ])),
+      ));
 
-  Widget _buildDot(int index) => Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-              color: Colors.teal, borderRadius: BorderRadius.circular(4)))
-      .animate(
-          onPlay: (controller) => controller.repeat(),
-          effects: [
-            ScaleEffect(
-                begin: const Offset(0.5, 0.5),
-                end: const Offset(1.0, 1.0),
-                duration: 600.ms,
-                curve: Curves.easeInOut),
-            FadeEffect(
-                begin: 0.5, end: 1.0, duration: 600.ms, curve: Curves.easeInOut)
-          ],
-          delay: Duration(milliseconds: index * 200));
+  Widget _buildDot(int index) => AnimatedBuilder(
+        animation: _dotAnimations[index],
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _dotAnimations[index].value,
+            child: Opacity(
+              opacity: _dotAnimations[index].value,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.teal,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+          );
+        },
+      );
 
   Widget _buildMessageInput() {
     return ValueListenableBuilder(
@@ -239,7 +315,7 @@ class _ChatGPTScreenState extends State<ChatGPTScreen> {
         builder: (context, navbarheight, child) {
           return AnimatedContainer(
               height: 72 * navbarheight,
-              duration: Duration(microseconds: 100),
+              duration: Duration(milliseconds: 100),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               color: Colors.grey[300],
               child: Row(children: [
