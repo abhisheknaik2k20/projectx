@@ -100,9 +100,8 @@ class _MessagesPageState extends State<MessagesPage> {
             final users = snapshot.data ?? [];
             return ListView.builder(
                 itemCount: users.length,
-                itemBuilder: (context, index) {
-                  return _buildChatListItem(users[index]);
-                });
+                itemBuilder: (context, index) =>
+                    _buildChatListItem(users[index]));
           }));
 
   Widget _buildChatListItem(UserModel userData) => ListTile(
@@ -137,37 +136,4 @@ class _MessagesPageState extends State<MessagesPage> {
           onPressed: () {},
           backgroundColor: Colors.teal,
           child: Icon(Icons.message, color: Colors.white)));
-}
-
-class MessageTile extends StatelessWidget {
-  const MessageTile({super.key, required this.messageData, this.onTap});
-  final MessageData messageData;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-      onTap: onTap,
-      child: Column(children: [
-        Expanded(
-            child: Icon(Icons.account_circle,
-                size: 80, color: Colors.blue.shade700)),
-        Padding(
-            padding: const EdgeInsets.all(20),
-            child: Text(messageData.sendname,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                textAlign: TextAlign.center))
-      ]));
-}
-
-class MessageData {
-  const MessageData(
-      {required this.sendname,
-      required this.sendmessage,
-      required this.email,
-      required this.uid});
-  final String sendname;
-  final String sendmessage;
-  final String email;
-  final String uid;
 }
