@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 
 class NotificationPage extends StatelessWidget {
   final VoidCallback toggleDrawer;
-
   NotificationPage({required this.toggleDrawer, super.key});
 
   final _notificationRepo = NotificationRepository();
@@ -24,15 +23,6 @@ class NotificationPage extends StatelessWidget {
           builder: (context, snapshot) {
             final notification = snapshot.data ?? [];
             return CustomScrollView(slivers: [
-              SliverAppBar(
-                  backgroundColor: Colors.teal,
-                  leading: IconButton(
-                      icon: const Icon(Icons.menu, color: Colors.white),
-                      onPressed: () => toggleDrawer()),
-                  title: const Text('Notifications',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w500)),
-                  floating: true),
               if (notification.isNotEmpty)
                 SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {

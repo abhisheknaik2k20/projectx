@@ -9,7 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class WhatsAppStatusCommunityScreen extends StatefulWidget {
-  const WhatsAppStatusCommunityScreen({super.key});
+  final VoidCallback toggleDrawer;
+  const WhatsAppStatusCommunityScreen({super.key, required this.toggleDrawer});
 
   @override
   State<WhatsAppStatusCommunityScreen> createState() =>
@@ -42,20 +43,9 @@ class _WhatsAppStatusCommunityScreenState
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-          backgroundColor: Colors.teal,
-          title: Text('Status',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          actions: [
-            IconButton(icon: Icon(Icons.search), onPressed: () {}),
-            IconButton(icon: Icon(Icons.more_vert), onPressed: () {})
-          ]),
       body: Column(children: [
-        Container(
+        SizedBox(
             height: 125,
-            color: Colors.grey[100],
             child: StreamBuilder(
                 stream: _userRepository.getAllUsers(),
                 builder: (context, snapshot) {
@@ -129,9 +119,7 @@ class _WhatsAppStatusCommunityScreenState
                             children: [
                           Container(
                               padding: EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  shape: BoxShape.circle),
+                              decoration: BoxDecoration(shape: BoxShape.circle),
                               child: Icon(Icons.people_outline,
                                   size: 60, color: Color(0xFF128C7E))),
                           SizedBox(height: 20),
@@ -160,10 +148,10 @@ class _WhatsAppStatusCommunityScreenState
                 }))
       ]),
       floatingActionButton: FloatingActionButton(
-          backgroundColor: Color(0xFF25D366),
+          backgroundColor: Colors.teal,
           child: isLoading
               ? CircularProgressIndicator(color: Colors.white)
-              : Icon(Icons.group_add),
+              : Icon(Icons.group_add, color: Colors.white),
           onPressed: () async {
             if (isLoading) return;
             try {
@@ -247,7 +235,7 @@ class _WhatsAppStatusCommunityScreenState
           child: Column(children: [
             Stack(children: [
               CircleAvatar(
-                  radius: 30,
+                  radius: 40,
                   backgroundImage: NetworkImage(_currentUser?.photoURL ?? '')),
               Positioned(
                   right: 0,
@@ -256,7 +244,7 @@ class _WhatsAppStatusCommunityScreenState
                       height: 20,
                       width: 20,
                       decoration: BoxDecoration(
-                          color: Color(0xFF25D366),
+                          color: Colors.teal,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2)),
                       child: Icon(Icons.add, color: Colors.white, size: 16)))
@@ -266,9 +254,9 @@ class _WhatsAppStatusCommunityScreenState
           ])));
 
   Widget _buildStatusCircle(UserModel user) {
-    // if (user.statusImages == null || user.statusImages!.isEmpty) {
-    //   return Container();
-    // } ENABLE THIS IS PRODUCTION BUILD
+    if (user.statusImages == null || user.statusImages!.isEmpty) {
+      return Container();
+    }
     return GestureDetector(
         onTap: () {
           Navigator.push(
@@ -302,7 +290,6 @@ class _WhatsAppStatusCommunityScreenState
 
   Widget _buildCommunityHeader() => Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: Colors.grey[50],
       child: Row(children: [
         Text('Communities',
             style: TextStyle(
@@ -320,7 +307,7 @@ class _WhatsAppStatusCommunityScreenState
       leading: CircleAvatar(
           backgroundImage: community.imageUrl.startsWith('http')
               ? NetworkImage(community.imageUrl) as ImageProvider
-              : AssetImage(community.imageUrl),
+              : AssetImage("assets/logo.png"),
           radius: 26),
       title:
           Text(community.name, style: TextStyle(fontWeight: FontWeight.bold)),

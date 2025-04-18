@@ -33,9 +33,24 @@ class _ProfilePageState extends State<ProfilePage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late bool isDarkMode;
+  late ThemeData theme;
 
   @override
   bool get wantKeepAlive => true;
+  Color get primaryColor => isDarkMode ? Color(0xFF128C7E) : Color(0xFF075E54);
+  Color get accentColor => isDarkMode ? Color(0xFF25D366) : Color(0xFF25D366);
+  Color get cardColor => isDarkMode ? Colors.grey.shade900 : Colors.white;
+  Color get textColor => isDarkMode ? Colors.white : Colors.black87;
+  Color get subtitleColor =>
+      isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700;
+  Color get dividerColor => isDarkMode
+      ? Colors.grey.shade700.withOpacity(0.3)
+      : Colors.grey.withOpacity(0.3);
+  Color get iconColor =>
+      isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700;
+  Color get placeholderColor =>
+      isDarkMode ? Colors.grey.shade700 : Colors.grey.shade400;
 
   void getDetails() async {
     try {
@@ -69,7 +84,18 @@ class _ProfilePageState extends State<ProfilePage>
     setState(() => isLoadingMedia = true);
     try {
       List<File> files = [];
-      List<String> mediaTypes = ['Image', 'Video', 'PDF'];
+      List<String> mediaTypes = [
+        'Image',
+        'Video',
+        'PDF',
+        'DOC',
+        'DOCX',
+        'PPT',
+        'PPTX',
+        'XLS',
+        'XLSX',
+        'TXT'
+      ];
       for (String type in mediaTypes) {
         Directory? appDir;
         if (Platform.isAndroid) {
@@ -121,6 +147,7 @@ class _ProfilePageState extends State<ProfilePage>
           }
         }
       }
+
       if (files.isEmpty) {
         try {
           Directory? appDir = Platform.isAndroid
@@ -137,6 +164,7 @@ class _ProfilePageState extends State<ProfilePage>
           print("Failed to search parent directory: $e");
         }
       }
+
       setState(() {
         mediaFiles = files;
         isLoadingMedia = false;
@@ -167,7 +195,12 @@ class _ProfilePageState extends State<ProfilePage>
             '.avi',
             '.pdf',
             '.doc',
-            '.docx'
+            '.docx',
+            '.ppt',
+            '.pptx',
+            '.xls',
+            '.xlsx',
+            '.txt'
           ].contains(ext)) {
             print("Found media file: ${entity.path}");
             files.add(entity);
@@ -216,13 +249,18 @@ class _ProfilePageState extends State<ProfilePage>
         ['.jpg', '.jpeg', '.png', '.gif', '.webp'].contains(fileExt);
     final isVideo = ['.mp4', '.mov', '.avi', '.mkv'].contains(fileExt);
     final isPdf = ['.pdf'].contains(fileExt);
+    final isDoc = ['.doc', '.docx'].contains(fileExt);
+    final isPpt = ['.ppt', '.pptx'].contains(fileExt);
+    final isExcel = ['.xls', '.xlsx'].contains(fileExt);
+    final isTxt = ['.txt'].contains(fileExt);
+
     return Container(
         decoration: BoxDecoration(
-            color: Colors.grey.shade200,
+            color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200,
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.1),
                   blurRadius: 4,
                   offset: Offset(0, 2))
             ]),
@@ -232,25 +270,54 @@ class _ProfilePageState extends State<ProfilePage>
             Image.file(file, fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
               print("Error loading image: $error");
-              return const Center(
-                  child: Icon(Icons.broken_image, color: Colors.grey));
+              return Center(
+                  child: Icon(Icons.broken_image, color: placeholderColor));
             })
           else if (isVideo)
             Container(
-                color: Colors.black,
-                child: const Center(
+                color: isDarkMode ? Colors.grey.shade900 : Colors.black,
+                child: Center(
                     child: Icon(Icons.play_circle_outline,
                         color: Colors.white, size: 40)))
           else if (isPdf)
             Container(
-                color: Colors.red.shade50,
-                child: const Center(
+                color: isDarkMode ? Colors.red.shade900 : Colors.red.shade50,
+                child: Center(
                     child: Icon(Icons.picture_as_pdf,
                         color: Colors.red, size: 40)))
+          else if (isDoc)
+            Container(
+                color: isDarkMode ? Colors.blue.shade900 : Colors.blue.shade50,
+                child: Center(
+                    child:
+                        Icon(Icons.description, color: Colors.blue, size: 40)))
+          else if (isPpt)
+            Container(
+                color:
+                    isDarkMode ? Colors.orange.shade900 : Colors.orange.shade50,
+                child: Center(
+                    child:
+                        Icon(Icons.slideshow, color: Colors.orange, size: 40)))
+          else if (isExcel)
+            Container(
+                color:
+                    isDarkMode ? Colors.green.shade900 : Colors.green.shade50,
+                child: Center(
+                    child:
+                        Icon(Icons.table_chart, color: Colors.green, size: 40)))
+          else if (isTxt)
+            Container(
+                color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade50,
+                child: Center(
+                    child: Icon(Icons.article,
+                        color: isDarkMode
+                            ? Colors.grey.shade300
+                            : Colors.grey.shade700,
+                        size: 40)))
           else
             Container(
-                color: Colors.blue.shade50,
-                child: const Center(
+                color: isDarkMode ? Colors.blue.shade900 : Colors.blue.shade50,
+                child: Center(
                     child: Icon(Icons.insert_drive_file,
                         color: Colors.blue, size: 40))),
           if (!isImage)
@@ -262,7 +329,10 @@ class _ProfilePageState extends State<ProfilePage>
                     padding:
                         const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                     color: Colors.black.withOpacity(0.6),
-                    child: Text(path.basename(file.path),
+                    child: Text(
+                        Uri.decodeComponent(path
+                            .basename(file.path)
+                            .replaceFirst(RegExp(r'^\d+_'), '')),
                         style:
                             const TextStyle(color: Colors.white, fontSize: 10),
                         maxLines: 1,
@@ -277,7 +347,7 @@ class _ProfilePageState extends State<ProfilePage>
             style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF128C7E),
+                color: primaryColor,
                 letterSpacing: 0.2)),
         if (trailing != null) trailing
       ]));
@@ -290,15 +360,16 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    theme = Theme.of(context);
+
     final callStatusProvider = context.watch<CallStatusProvider>();
     if (callStatusProvider.isCallActive) {
       return const CallScreen();
     }
     if (user == null) {
       return Scaffold(
-          backgroundColor: Colors.white,
-          body: const Center(
-              child: CircularProgressIndicator(color: Color(0xFF075E54))));
+          body: Center(child: CircularProgressIndicator(color: primaryColor)));
     }
     return StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
@@ -319,92 +390,146 @@ class _ProfilePageState extends State<ProfilePage>
             userEmail = user?.email ?? 'No email';
           }
           return Scaffold(
-              backgroundColor: Colors.grey.shade50,
               body: CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
-                    SliverAppBar(
-                        expandedHeight: 230,
-                        backgroundColor: Colors.transparent,
-                        pinned: true,
-                        stretch: true,
-                        flexibleSpace: FlexibleSpaceBar(
-                            stretchModes: [StretchMode.zoomBackground],
-                            background: _buildHeroImage(imageUrl)),
-                        leading: IconButton(
-                            icon: const Icon(Icons.arrow_back,
-                                color: Colors.white),
-                            onPressed: () => Navigator.of(context).pop()),
-                        actions: [
-                          if (widget.isMe)
-                            IconButton(
-                                icon:
-                                    const Icon(Icons.edit, color: Colors.white),
-                                onPressed: () async {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text("Select profile image"),
-                                          backgroundColor: Colors.grey[900],
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10))));
-                                  try {
-                                    FilePickerResult? result =
-                                        await FilePicker.platform.pickFiles(
-                                            type: FileType.image,
-                                            allowMultiple: false);
-                                    if (result != null &&
-                                        result.files.single.path != null) {
-                                      File imageFile =
-                                          File(result.files.single.path!);
-                                      String? imageURL = await S3UploadService()
-                                          .uploadFileToS3(
-                                              reciverId: widget.UserUID,
-                                              file: imageFile,
-                                              fileType: "Image",
-                                              sendNotification: false);
-                                      UserRepository().updateUserProfile(
-                                          _auth.currentUser!.uid,
-                                          imageURL ?? '');
-                                    }
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                            content:
-                                                Text('Error picking image: $e'),
-                                            backgroundColor: Colors.red));
-                                  }
-                                }),
-                          PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert,
-                                  color: Colors.white),
-                              onSelected: (value) =>
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text('Selected: $value'))),
-                              itemBuilder: (context) => [
-                                    const PopupMenuItem(
-                                        value: 'share',
-                                        child: Text('Share profile')),
+                SliverAppBar(
+                    expandedHeight: 230,
+                    backgroundColor: Colors.transparent,
+                    pinned: true,
+                    stretch: true,
+                    flexibleSpace: FlexibleSpaceBar(
+                        stretchModes: [StretchMode.zoomBackground],
+                        background: _buildHeroImage(imageUrl)),
+                    leading: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop()),
+                    actions: [
+                      if (widget.isMe)
+                        IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.white),
+                            onPressed: () async {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text("Select profile image"),
+                                      backgroundColor: isDarkMode
+                                          ? Colors.grey[800]
+                                          : Colors.grey[900],
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10))));
+                              try {
+                                FilePickerResult? result =
+                                    await FilePicker.platform.pickFiles(
+                                        type: FileType.image,
+                                        allowMultiple: false);
+                                if (result != null &&
+                                    result.files.single.path != null) {
+                                  File imageFile =
+                                      File(result.files.single.path!);
+                                  String? imageURL = await S3UploadService()
+                                      .uploadFileToS3(
+                                          reciverId: widget.UserUID,
+                                          file: imageFile,
+                                          fileType: "Image",
+                                          sendNotification: false);
+                                  UserRepository().updateUserProfile(
+                                      _auth.currentUser!.uid, imageURL ?? '');
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text('Error picking image: $e'),
+                                        backgroundColor: Colors.red));
+                              }
+                            }),
+                      PopupMenuButton<String>(
+                          icon:
+                              const Icon(Icons.more_vert, color: Colors.white),
+                          onSelected: (value) => ScaffoldMessenger.of(context)
+                              .showSnackBar(
+                                  SnackBar(content: Text('Selected: $value'))),
+                          itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                    value: 'share',
+                                    child: Text('Share profile')),
+                                if (widget.isMe)
+                                  const PopupMenuItem(
+                                      value: 'logout', child: Text('Log out')),
+                                if (!widget.isMe)
+                                  const PopupMenuItem(
+                                      value: 'block',
+                                      child: Text('Block user')),
+                                if (!widget.isMe)
+                                  const PopupMenuItem(
+                                      value: 'report', child: Text('Report')),
+                              ])
+                    ]),
+                SliverToBoxAdapter(
+                    child: _buildAnimatedSection(Card(
+                        margin: const EdgeInsets.all(8.0),
+                        elevation: 1,
+                        color: cardColor,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(children: [
+                                    Expanded(
+                                        child: Text(userName,
+                                            style: TextStyle(
+                                                fontSize: 25,
+                                                fontWeight: FontWeight.bold,
+                                                color: textColor,
+                                                letterSpacing: 0.2))),
                                     if (widget.isMe)
-                                      const PopupMenuItem(
-                                          value: 'logout',
-                                          child: Text('Log out')),
-                                    if (!widget.isMe)
-                                      const PopupMenuItem(
-                                          value: 'block',
-                                          child: Text('Block user')),
-                                    if (!widget.isMe)
-                                      const PopupMenuItem(
-                                          value: 'report',
-                                          child: Text('Report')),
+                                      const Icon(Icons.verified,
+                                          color: Color(0xFF25D366), size: 20)
+                                  ]),
+                                  const SizedBox(height: 12),
+                                  GestureDetector(
+                                      onTap: () => ScaffoldMessenger.of(context)
+                                          .showSnackBar(SnackBar(
+                                              content:
+                                                  Text('Email: $userEmail'))),
+                                      child: Row(children: [
+                                        Icon(Icons.email,
+                                            size: 22, color: iconColor),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                            child: Text(userEmail,
+                                                style: TextStyle(
+                                                    fontSize: 18,
+                                                    color: textColor),
+                                                maxLines: 1,
+                                                overflow:
+                                                    TextOverflow.ellipsis))
+                                      ])),
+                                  const SizedBox(height: 16),
+                                  Row(children: [
+                                    user?.status == "Online"
+                                        ? Icon(Icons.circle,
+                                            color: Colors.green)
+                                        : Icon(Icons.circle,
+                                            color: Colors.grey),
+                                    const SizedBox(width: 8),
+                                    Text(user?.status ?? "",
+                                        style: TextStyle(
+                                            fontSize: 16, color: subtitleColor))
                                   ])
-                        ]),
-                    SliverToBoxAdapter(
-                        child: _buildAnimatedSection(Card(
-                            margin: const EdgeInsets.all(8.0),
+                                ]))))),
+                SliverToBoxAdapter(
+                    child: _buildAnimatedSection(
+                        Card(
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 8.0, vertical: 4.0),
                             elevation: 1,
+                            color: cardColor,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
                             child: Padding(
@@ -414,370 +539,313 @@ class _ProfilePageState extends State<ProfilePage>
                                         CrossAxisAlignment.start,
                                     children: [
                                       Row(children: [
-                                        Expanded(
-                                            child: Text(userName,
-                                                style: const TextStyle(
-                                                    fontSize: 25,
-                                                    fontWeight: FontWeight.bold,
-                                                    letterSpacing: 0.2))),
-                                        if (widget.isMe)
-                                          const Icon(Icons.verified,
-                                              color: Color(0xFF25D366),
-                                              size: 20)
-                                      ]),
-                                      const SizedBox(height: 12),
-                                      GestureDetector(
-                                          onTap: () => ScaffoldMessenger.of(
-                                                  context)
-                                              .showSnackBar(SnackBar(
-                                                  content: Text(
-                                                      'Email: $userEmail'))),
-                                          child: Row(children: [
-                                            const Icon(Icons.email,
-                                                size: 22, color: Colors.grey),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                                child: Text(userEmail,
-                                                    style: const TextStyle(
-                                                        fontSize: 18,
-                                                        color: Colors.black87),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis))
-                                          ])),
-                                      const SizedBox(height: 16),
-                                      Row(children: [
-                                        user?.status == "Online"
-                                            ? Icon(Icons.circle,
-                                                color: Colors.green)
-                                            : Icon(Icons.circle,
-                                                color: Colors.grey),
-                                        const SizedBox(width: 8),
-                                        Text(user?.status ?? "",
+                                        Text("About",
                                             style: TextStyle(
                                                 fontSize: 16,
-                                                color: Colors.grey.shade700))
-                                      ])
-                                    ]))))),
-                    SliverToBoxAdapter(
-                        child: _buildAnimatedSection(
-                            Card(
-                                margin: const EdgeInsets.symmetric(
-                                    horizontal: 8.0, vertical: 4.0),
-                                elevation: 1,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                                child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(children: [
-                                            Text("About",
-                                                style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Color(0xFF075E54))),
-                                            Spacer(),
-                                            widget.isMe
-                                                ? IconButton(
-                                                    onPressed: () {},
-                                                    icon: Icon(Icons.edit))
-                                                : SizedBox.shrink()
-                                          ]),
-                                          const SizedBox(height: 8),
-                                          Text(userDescription,
-                                              style: TextStyle(
-                                                  fontSize: 15,
-                                                  color: Colors.black87,
-                                                  height: 1.4))
-                                        ]))),
-                            delay: 0.1)),
-                    if (!widget.isMe) ...[
-                      SliverToBoxAdapter(
-                          child: _buildAnimatedSection(
-                              Card(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 8.0, vertical: 4.0),
-                                  elevation: 1,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12)),
-                                  child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        _buildSectionHeader(
-                                            "Media, Links, and Docs",
-                                            trailing: mediaFiles.isNotEmpty
-                                                ? TextButton.icon(
-                                                    onPressed: () =>
-                                                        _showFullMediaGallery(
-                                                            context, mediaFiles),
-                                                    icon: Text("SEE ALL",
-                                                        style: TextStyle(
-                                                            fontSize: 14,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color:
-                                                                Colors.teal)),
-                                                    label: Icon(
-                                                        Icons.arrow_forward,
-                                                        size: 16,
-                                                        color: Colors.teal))
-                                                : null),
-                                        if (isLoadingMedia)
-                                          Center(
-                                              child: Column(children: [
-                                            CircularProgressIndicator(
-                                                color: Color(0xFF075E54),
-                                                strokeWidth: 3),
-                                            SizedBox(height: 16),
-                                            Text("Looking for media...",
-                                                style: TextStyle(
-                                                    color:
-                                                        Colors.grey.shade600))
-                                          ]))
-                                        else if (mediaFiles.isEmpty)
-                                          Center(
-                                              child: Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      vertical: 10.0),
-                                                  child: Column(children: [
-                                                    Icon(
-                                                        Icons
-                                                            .image_not_supported,
-                                                        size: 64,
-                                                        color: Colors
-                                                            .grey.shade400),
-                                                    SizedBox(height: 16),
-                                                    Text("No media shared",
-                                                        style: TextStyle(
-                                                            fontSize: 16,
-                                                            color: Colors.grey
-                                                                .shade600)),
-                                                    SizedBox(height: 16),
-                                                    ElevatedButton.icon(
-                                                        onPressed: () {
-                                                          if (chatroomId ==
-                                                              null) {
-                                                            return;
-                                                          }
-                                                          loadSharedMedia(
-                                                              chatroomId!);
-                                                        },
-                                                        icon: const Icon(
-                                                            Icons.refresh),
-                                                        label:
-                                                            const Text("Retry"),
-                                                        style: ElevatedButton.styleFrom(
-                                                            backgroundColor:
-                                                                const Color(
-                                                                    0xFF075E54),
-                                                            foregroundColor:
-                                                                Colors.white,
-                                                            elevation: 0,
-                                                            shape: RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            20)),
-                                                            padding: EdgeInsets
-                                                                .symmetric(
-                                                                    horizontal:
-                                                                        20,
-                                                                    vertical:
-                                                                        10)))
-                                                  ])))
-                                        else
-                                          Padding(
+                                                fontWeight: FontWeight.bold,
+                                                color: primaryColor)),
+                                        Spacer(),
+                                        widget.isMe
+                                            ? IconButton(
+                                                onPressed: () {},
+                                                icon: Icon(Icons.edit,
+                                                    color: iconColor))
+                                            : SizedBox.shrink()
+                                      ]),
+                                      const SizedBox(height: 8),
+                                      Text(userDescription,
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              color: textColor,
+                                              height: 1.4))
+                                    ]))),
+                        delay: 0.1)),
+                if (!widget.isMe) ...[
+                  SliverToBoxAdapter(
+                      child: _buildAnimatedSection(
+                          Card(
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 8.0, vertical: 4.0),
+                              elevation: 1,
+                              color: cardColor,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildSectionHeader(
+                                        "Media, Links, and Docs",
+                                        trailing: mediaFiles.isNotEmpty
+                                            ? TextButton.icon(
+                                                onPressed: () =>
+                                                    _showFullMediaGallery(
+                                                        context, mediaFiles),
+                                                icon: Text("SEE ALL",
+                                                    style: TextStyle(
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: primaryColor)),
+                                                label: Icon(Icons.arrow_forward,
+                                                    size: 16,
+                                                    color: primaryColor))
+                                            : null),
+                                    if (isLoadingMedia)
+                                      Center(
+                                          child: Column(children: [
+                                        CircularProgressIndicator(
+                                            color: primaryColor,
+                                            strokeWidth: 3),
+                                        SizedBox(height: 16),
+                                        Text("Looking for media...",
+                                            style:
+                                                TextStyle(color: subtitleColor))
+                                      ]))
+                                    else if (mediaFiles.isEmpty)
+                                      Center(
+                                          child: Padding(
                                               padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: GridView.builder(
-                                                  shrinkWrap: true,
-                                                  physics:
-                                                      NeverScrollableScrollPhysics(),
-                                                  gridDelegate:
-                                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                                          crossAxisCount: 3,
-                                                          mainAxisSpacing: 3,
-                                                          crossAxisSpacing: 8,
-                                                          childAspectRatio:
-                                                              1.0),
-                                                  itemCount:
-                                                      mediaFiles.length > 6
-                                                          ? 6
-                                                          : mediaFiles.length,
-                                                  itemBuilder:
-                                                      (context, index) {
-                                                    final file =
-                                                        mediaFiles[index];
-                                                    return Hero(
-                                                        tag:
-                                                            'media-${file.path}',
-                                                        child: GestureDetector(
-                                                            onTap: () =>
-                                                                _openMediaFile(
-                                                                    context,
-                                                                    file),
-                                                            child:
-                                                                _buildMediaThumbnail(
-                                                                    file)));
-                                                  })),
-                                        SizedBox(height: 8),
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 10.0),
+                                              child: Column(children: [
+                                                Icon(Icons.image_not_supported,
+                                                    size: 64,
+                                                    color: placeholderColor),
+                                                SizedBox(height: 16),
+                                                Text("No media shared",
+                                                    style: TextStyle(
+                                                        fontSize: 16,
+                                                        color: subtitleColor)),
+                                                SizedBox(height: 16),
+                                                ElevatedButton.icon(
+                                                    onPressed: () {
+                                                      if (chatroomId == null) {
+                                                        return;
+                                                      }
+                                                      loadSharedMedia(
+                                                          chatroomId!);
+                                                    },
+                                                    icon: const Icon(
+                                                        Icons.refresh),
+                                                    label: const Text("Retry"),
+                                                    style: ElevatedButton.styleFrom(
+                                                        backgroundColor:
+                                                            primaryColor,
+                                                        foregroundColor:
+                                                            Colors.white,
+                                                        elevation: 0,
+                                                        shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        20)),
+                                                        padding: EdgeInsets
+                                                            .symmetric(
+                                                                horizontal: 20,
+                                                                vertical: 10)))
+                                              ])))
+                                    else
+                                      Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: GridView.builder(
+                                              shrinkWrap: true,
+                                              physics:
+                                                  NeverScrollableScrollPhysics(),
+                                              gridDelegate:
+                                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                                      crossAxisCount: 3,
+                                                      mainAxisSpacing: 3,
+                                                      crossAxisSpacing: 4,
+                                                      childAspectRatio: 1.0),
+                                              itemCount: mediaFiles.length > 6
+                                                  ? 6
+                                                  : mediaFiles.length,
+                                              itemBuilder: (context, index) {
+                                                final file = mediaFiles[index];
+                                                return Hero(
+                                                    tag: 'media-${file.path}',
+                                                    child: GestureDetector(
+                                                        onTap: () =>
+                                                            _openMediaFile(
+                                                                context, file),
+                                                        child:
+                                                            _buildMediaThumbnail(
+                                                                file)));
+                                              })),
+                                    SizedBox(height: 8),
+                                  ])),
+                          delay: 0.2))
+                ],
+                SliverToBoxAdapter(
+                    child: _buildAnimatedSection(
+                        Card(
+                            margin: const EdgeInsets.all(8.0),
+                            elevation: 1,
+                            color: cardColor,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            child: Column(
+                                children: widget.isMe
+                                    ? [
+                                        _buildListTile(
+                                            icon: Icons.settings,
+                                            title: "Settings",
+                                            subtitle:
+                                                "Privacy, security, and more",
+                                            onTap: () {}),
+                                        _buildDivider(),
+                                        _buildListTile(
+                                            icon: Icons.notifications,
+                                            title: "Notifications",
+                                            subtitle:
+                                                "Message, group & call tones",
+                                            onTap: () {}),
+                                        _buildDivider(),
+                                        _buildListTile(
+                                            icon: Icons.help_outline,
+                                            title: "Help",
+                                            subtitle:
+                                                "Help center, contact us, privacy policy",
+                                            onTap: () {}),
+                                        _buildDivider(),
+                                        _buildListTile(
+                                            icon: Icons.group,
+                                            title: "Invite Friends",
+                                            subtitle:
+                                                "Share SwiftTalk with friends",
+                                            onTap: () {})
+                                      ]
+                                    : [
+                                        _buildListTile(
+                                            icon: Icons.message,
+                                            title: "Message",
+                                            color: primaryColor,
+                                            onTap: () {
+                                              Navigator.pop(context);
+                                            }),
+                                        _buildDivider(),
+                                        _buildListTile(
+                                            icon: Icons.call,
+                                            title: "Voice Call",
+                                            color: primaryColor,
+                                            onTap: () => ScaffoldMessenger.of(
+                                                    context)
+                                                .showSnackBar(SnackBar(
+                                                    content: Text(
+                                                        'Starting voice call...')))),
+                                        _buildDivider(),
+                                        _buildListTile(
+                                            icon: Icons.videocam,
+                                            title: "Video Call",
+                                            color: primaryColor,
+                                            onTap: () => ScaffoldMessenger.of(
+                                                    context)
+                                                .showSnackBar(SnackBar(
+                                                    content: Text(
+                                                        'Starting video call...')))),
+                                        _buildDivider(),
+                                        _buildListTile(
+                                            icon: Icons.person_off,
+                                            title: "Block",
+                                            color: Colors.red,
+                                            onTap: () {
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      AlertDialog(
+                                                          backgroundColor:
+                                                              cardColor,
+                                                          title: Text(
+                                                              "Block this contact?"),
+                                                          content: Text(
+                                                              "Blocked contacts will no longer be able to call you or send you messages."),
+                                                          actions: [
+                                                            TextButton(
+                                                                onPressed: () =>
+                                                                    Navigator.pop(
+                                                                        context),
+                                                                child: Text(
+                                                                    "CANCEL")),
+                                                            TextButton(
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  ScaffoldMessenger.of(
+                                                                          context)
+                                                                      .showSnackBar(SnackBar(
+                                                                          content:
+                                                                              Text('Contact blocked')));
+                                                                },
+                                                                child: Text(
+                                                                    "BLOCK",
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .red)))
+                                                          ]));
+                                            })
                                       ])),
-                              delay: 0.2))
-                    ],
-                    SliverToBoxAdapter(
-                        child: _buildAnimatedSection(
-                            Card(
-                                margin: const EdgeInsets.all(8.0),
-                                elevation: 1,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                                child: Column(
-                                    children: widget.isMe
-                                        ? [
-                                            _buildListTile(
-                                                icon: Icons.settings,
-                                                title: "Settings",
-                                                subtitle:
-                                                    "Privacy, security, and more",
-                                                onTap: () {}),
-                                            _buildDivider(),
-                                            _buildListTile(
-                                                icon: Icons.notifications,
-                                                title: "Notifications",
-                                                subtitle:
-                                                    "Message, group & call tones",
-                                                onTap: () {}),
-                                            _buildDivider(),
-                                            _buildListTile(
-                                                icon: Icons.help_outline,
-                                                title: "Help",
-                                                subtitle:
-                                                    "Help center, contact us, privacy policy",
-                                                onTap: () {}),
-                                            _buildDivider(),
-                                            _buildListTile(
-                                                icon: Icons.group,
-                                                title: "Invite Friends",
-                                                subtitle:
-                                                    "Share SwiftTalk with friends",
-                                                onTap: () {})
-                                          ]
-                                        : [
-                                            _buildListTile(
-                                                icon: Icons.message,
-                                                title: "Message",
-                                                color: Color(0xFF075E54),
-                                                onTap: () {
-                                                  Navigator.pop(context);
-                                                }),
-                                            _buildDivider(),
-                                            _buildListTile(
-                                                icon: Icons.call,
-                                                title: "Voice Call",
-                                                color: Color(0xFF075E54),
-                                                onTap: () => ScaffoldMessenger
-                                                        .of(context)
-                                                    .showSnackBar(SnackBar(
-                                                        content: Text(
-                                                            'Starting voice call...')))),
-                                            _buildDivider(),
-                                            _buildListTile(
-                                                icon: Icons.videocam,
-                                                title: "Video Call",
-                                                color: Color(0xFF075E54),
-                                                onTap: () => ScaffoldMessenger
-                                                        .of(context)
-                                                    .showSnackBar(SnackBar(
-                                                        content: Text(
-                                                            'Starting video call...')))),
-                                            _buildDivider(),
-                                            _buildListTile(
-                                                icon: Icons.person_off,
-                                                title: "Block",
-                                                color: Colors.red,
-                                                onTap: () {
-                                                  showDialog(
-                                                      context: context,
-                                                      builder: (context) =>
-                                                          AlertDialog(
-                                                              title: Text(
-                                                                  "Block this contact?"),
-                                                              content: Text(
-                                                                  "Blocked contacts will no longer be able to call you or send you messages."),
-                                                              actions: [
-                                                                TextButton(
-                                                                    onPressed: () =>
-                                                                        Navigator.pop(
-                                                                            context),
-                                                                    child: Text(
-                                                                        "CANCEL")),
-                                                                TextButton(
-                                                                    onPressed:
-                                                                        () {
-                                                                      Navigator.pop(
-                                                                          context);
-                                                                      ScaffoldMessenger.of(
-                                                                              context)
-                                                                          .showSnackBar(
-                                                                              SnackBar(content: Text('Contact blocked')));
-                                                                    },
-                                                                    child: Text(
-                                                                        "BLOCK",
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.red)))
-                                                              ]));
-                                                })
-                                          ])),
-                            delay: 0.3)),
-                    SliverToBoxAdapter(child: SizedBox(height: 24))
-                  ]));
+                        delay: 0.3)),
+                SliverToBoxAdapter(child: SizedBox(height: 24))
+              ]));
         });
   }
 
-  Widget _buildDivider() => Divider(
-      height: 1,
-      thickness: 0.5,
-      indent: 72,
-      color: Colors.grey.withOpacity(0.3));
+  Widget _buildDivider() => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Divider(color: dividerColor, height: 1),
+      );
 
-  Widget _buildListTile(
-          {required IconData icon,
-          required String title,
-          String? subtitle,
-          required VoidCallback onTap,
-          Color? color}) =>
-      ListTile(
-          leading: Icon(icon, color: color ?? Colors.grey.shade700, size: 24),
-          title: Text(title,
+  Widget _buildListTile({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Color? color,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: color ?? iconColor, size: 24),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: color ?? textColor,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
               style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: color ?? Colors.black87)),
-          subtitle: subtitle != null
-              ? Text(subtitle,
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600))
-              : null,
-          trailing: Icon(Icons.arrow_forward_ios,
-              size: 16, color: Colors.grey.shade400),
-          onTap: onTap);
+                fontSize: 14,
+                color: subtitleColor,
+              ),
+            )
+          : null,
+      onTap: onTap,
+      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: iconColor),
+    );
+  }
 
   void _openMediaFile(BuildContext context, File file) =>
       OpenFile.open(file.path);
 
-  void _showFullMediaGallery(BuildContext context, List<File> files) =>
-      Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => MediaGalleryPage(files: files)));
+  void _showFullMediaGallery(BuildContext context, List<File> files) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => MediaGalleryPage(
+          files: files,
+          isDarkMode: isDarkMode,
+        ),
+      ),
+    );
+  }
 }
 
 class MediaGalleryPage extends StatelessWidget {
   final List<File> files;
-  const MediaGalleryPage({super.key, required this.files});
+  final bool isDarkMode;
+  const MediaGalleryPage(
+      {super.key, required this.files, required this.isDarkMode});
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -801,6 +869,10 @@ class MediaGalleryPage extends StatelessWidget {
                 ['.jpg', '.jpeg', '.png', '.gif', '.webp'].contains(fileExt);
             final isVideo = ['.mp4', '.mov', '.avi', '.mkv'].contains(fileExt);
             final isPdf = ['.pdf'].contains(fileExt);
+            final isDoc = ['.doc', '.docx'].contains(fileExt);
+            final isPpt = ['.ppt', '.pptx'].contains(fileExt);
+            final isExcel = ['.xls', '.xlsx'].contains(fileExt);
+            final isTxt = ['.txt'].contains(fileExt);
             return Hero(
                 tag: 'media-${file.path}',
                 child: GestureDetector(
@@ -837,25 +909,67 @@ class MediaGalleryPage extends StatelessWidget {
                           if (isImage)
                             Image.file(file, fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
+                              print("Error loading image: $error");
                               return Center(
                                   child: Icon(Icons.broken_image,
                                       color: Colors.grey));
                             })
                           else if (isVideo)
                             Container(
-                                color: Colors.black,
+                                color: isDarkMode
+                                    ? Colors.grey.shade900
+                                    : Colors.black,
                                 child: Center(
                                     child: Icon(Icons.play_circle_outline,
                                         color: Colors.white, size: 40)))
                           else if (isPdf)
                             Container(
-                                color: Colors.red.shade50,
+                                color: isDarkMode
+                                    ? Colors.red.shade900
+                                    : Colors.red.shade50,
                                 child: Center(
                                     child: Icon(Icons.picture_as_pdf,
                                         color: Colors.red, size: 40)))
+                          else if (isDoc)
+                            Container(
+                                color: isDarkMode
+                                    ? Colors.blue.shade900
+                                    : Colors.blue.shade50,
+                                child: Center(
+                                    child: Icon(Icons.description,
+                                        color: Colors.blue, size: 40)))
+                          else if (isPpt)
+                            Container(
+                                color: isDarkMode
+                                    ? Colors.orange.shade900
+                                    : Colors.orange.shade50,
+                                child: Center(
+                                    child: Icon(Icons.slideshow,
+                                        color: Colors.orange, size: 40)))
+                          else if (isExcel)
+                            Container(
+                                color: isDarkMode
+                                    ? Colors.green.shade900
+                                    : Colors.green.shade50,
+                                child: Center(
+                                    child: Icon(Icons.table_chart,
+                                        color: Colors.green, size: 40)))
+                          else if (isTxt)
+                            Container(
+                                color: isDarkMode
+                                    ? Colors.grey.shade800
+                                    : Colors.grey.shade50,
+                                child: Center(
+                                    child: Icon(Icons.article,
+                                        color: isDarkMode
+                                            ? Colors.grey.shade300
+                                            : Colors.grey.shade700,
+                                        size: 40)))
                           else
                             Container(
-                                color: Colors.blue.shade50,
+                                color: isDarkMode
+                                    ? Colors.blue.shade900
+                                    : Colors.blue.shade50,
                                 child: Center(
                                     child: Icon(Icons.insert_drive_file,
                                         color: Colors.blue, size: 40))),
@@ -865,11 +979,15 @@ class MediaGalleryPage extends StatelessWidget {
                                 left: 0,
                                 right: 0,
                                 child: Container(
-                                    padding: EdgeInsets.symmetric(
+                                    padding: const EdgeInsets.symmetric(
                                         vertical: 4, horizontal: 8),
                                     color: Colors.black.withOpacity(0.6),
-                                    child: Text(path.basename(file.path),
-                                        style: TextStyle(
+                                    child: Text(
+                                        Uri.decodeComponent(path
+                                            .basename(file.path)
+                                            .replaceFirst(
+                                                RegExp(r'^\d+_'), '')),
+                                        style: const TextStyle(
                                             color: Colors.white, fontSize: 10),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis)))

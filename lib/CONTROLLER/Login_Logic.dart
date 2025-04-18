@@ -16,7 +16,6 @@ class AuthLoadingProvider extends ChangeNotifier {
 class AuthManager {
   final AuthLoadingProvider loadingProvider;
   AuthManager({required this.loadingProvider});
-
   Future<void> emailpassLogin(
       String email, String password, BuildContext context) async {
     final auth = FirebaseAuth.instance;

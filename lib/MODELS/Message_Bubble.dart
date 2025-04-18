@@ -72,10 +72,24 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final bool isCurrentUser =
         message.senderId == FirebaseAuth.instance.currentUser!.uid;
     final String formattedTime =
         CustomDateFormat.formatDateTime((message.timestamp).toDate());
+
+    // Theme-adaptive colors
+    final bubbleColorUser =
+        isDarkMode ? Colors.teal.shade800 : Colors.teal.shade100;
+    final bubbleColorOther = isDarkMode ? Colors.grey.shade800 : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final shadowColor =
+        isDarkMode ? Colors.black.withOpacity(0.5) : Colors.grey.shade300;
+    final highlightColor =
+        isDarkMode ? Colors.teal.shade400 : Colors.teal.shade800;
+    final timeColor = isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600;
+    final deletedTextColor = isDarkMode ? Colors.grey.shade400 : Colors.grey;
+
     return GestureDetector(
         onLongPress: () {
           HapticFeedback.heavyImpact();
@@ -95,12 +109,12 @@ class MessageBubble extends StatelessWidget {
                           maxWidth: MediaQuery.of(context).size.width * 0.5),
                       decoration: BoxDecoration(
                           color: isCurrentUser
-                              ? Colors.green.shade100
-                              : Colors.white,
+                              ? bubbleColorUser
+                              : bubbleColorOther,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.grey.shade300,
+                                color: shadowColor,
                                 blurRadius: 2,
                                 offset: const Offset(1, 1))
                           ]),
@@ -115,27 +129,29 @@ class MessageBubble extends StatelessWidget {
                                   child: Text(message.senderName,
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.green.shade800,
+                                          color: highlightColor,
                                           fontSize: 12))),
-                            _getMessageContent(message),
+                            _getMessageContent(message, isDarkMode,
+                                deletedTextColor, textColor),
                             const SizedBox(height: 4),
                             Align(
                                 alignment: Alignment.bottomRight,
                                 child: Text(formattedTime,
                                     style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600)))
+                                        fontSize: 12, color: timeColor)))
                           ]))
                 ])));
   }
 
-  Widget _getMessageContent(Message message) {
+  Widget _getMessageContent(Message message, bool isDarkMode,
+      Color deletedTextColor, Color textColor) {
     switch (message.type) {
       case "deleted":
         return Text(message.message,
-            style: const TextStyle(fontSize: 16, color: Colors.grey));
+            style: TextStyle(fontSize: 16, color: deletedTextColor));
       case _:
-        return Text(message.message, style: const TextStyle(fontSize: 16));
+        return Text(message.message,
+            style: TextStyle(fontSize: 16, color: textColor));
     }
   }
 
@@ -145,6 +161,19 @@ class MessageBubble extends StatelessWidget {
         .collection('chat_Rooms')
         .doc(([message.senderId, message.receiverId]..sort()).join("_"))
         .collection("messages");
+
+    // Get theme
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final bottomSheetBgColor =
+        isDarkMode ? const Color(0xFF1F2C34) : Colors.grey.shade100;
+    final dividerColor =
+        isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400;
+    final infoRowBgColor =
+        isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300;
+    final infoLabelColor =
+        isDarkMode ? Colors.grey.shade500 : Colors.grey.shade700;
+    final infoValueColor = isDarkMode ? Colors.white : Colors.black;
+
     showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -152,7 +181,7 @@ class MessageBubble extends StatelessWidget {
         builder: (context) => Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             decoration: BoxDecoration(
-                color: const Color(0xFF1F2C34),
+                color: bottomSheetBgColor,
                 borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(10),
                     topRight: Radius.circular(10))),
@@ -161,12 +190,18 @@ class MessageBubble extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                      color: Colors.grey[600],
+                      color: dividerColor,
                       borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 24),
-              _whatsappInfoRow(Icons.person, "From", message.senderName),
-              _whatsappInfoRow(Icons.access_time, "Sent",
-                  CustomDateFormat.formatDateTime(message.timestamp.toDate())),
+              _whatsappInfoRow(Icons.person, "From", message.senderName,
+                  infoRowBgColor, infoLabelColor, infoValueColor),
+              _whatsappInfoRow(
+                  Icons.access_time,
+                  "Sent",
+                  CustomDateFormat.formatDateTime(message.timestamp.toDate()),
+                  infoRowBgColor,
+                  infoLabelColor,
+                  infoValueColor),
               const SizedBox(height: 24),
               message.type != 'deleted'
                   ? Row(
@@ -223,30 +258,32 @@ class MessageBubble extends StatelessWidget {
         ]));
   }
 
-  Widget _whatsappInfoRow(IconData icon, String title, String value) => Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(children: [
-        Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-                color: Colors.grey[800],
-                borderRadius: BorderRadius.circular(20)),
-            child: Icon(icon, color: Colors.white, size: 20)),
-        const SizedBox(width: 16),
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
-          Text(value,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis)
-        ]))
-      ]));
+  Widget _whatsappInfoRow(IconData icon, String title, String value,
+          Color bgColor, Color labelColor, Color valueColor) =>
+      Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(children: [
+            Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                    color: bgColor, borderRadius: BorderRadius.circular(20)),
+                child: Icon(icon, color: valueColor, size: 20)),
+            const SizedBox(width: 16),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(title,
+                      style: TextStyle(color: labelColor, fontSize: 14)),
+                  Text(value,
+                      style: TextStyle(color: valueColor, fontSize: 16),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis)
+                ]))
+          ]));
 }
 
-// ignore: must_be_immutable
 class FileMessageBubble extends StatelessWidget {
   final FileMessage message;
   final String chatRoomID;
@@ -255,10 +292,23 @@ class FileMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final bool isCurrentUser =
         message.senderId == FirebaseAuth.instance.currentUser!.uid;
     final String formattedTime =
         CustomDateFormat.formatDateTime((message.timestamp).toDate());
+
+    // Theme-adaptive colors
+    final bubbleColorUser =
+        isDarkMode ? Colors.teal.shade800 : Colors.teal.shade100;
+    final bubbleColorOther = isDarkMode ? Colors.grey.shade800 : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final shadowColor =
+        isDarkMode ? Colors.black.withOpacity(0.5) : Colors.grey.shade300;
+    final highlightColor =
+        isDarkMode ? Colors.teal.shade400 : Colors.teal.shade800;
+    final timeColor = isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600;
+
     return GestureDetector(
         onTap: () => _handleMediaTap(message, context),
         onLongPress: () {
@@ -279,12 +329,12 @@ class FileMessageBubble extends StatelessWidget {
                           maxWidth: MediaQuery.of(context).size.width * 0.5),
                       decoration: BoxDecoration(
                           color: isCurrentUser
-                              ? Colors.green.shade100
-                              : Colors.white,
+                              ? bubbleColorUser
+                              : bubbleColorOther,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.grey.shade300,
+                                color: shadowColor,
                                 blurRadius: 2,
                                 offset: const Offset(1, 1))
                           ]),
@@ -299,22 +349,21 @@ class FileMessageBubble extends StatelessWidget {
                                 child: Text(message.senderName,
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.green.shade800,
+                                        color: highlightColor,
                                         fontSize: 12)),
                               ),
-                            _getMessageContent(message),
+                            _getMessageContent(message, isDarkMode),
                             const SizedBox(height: 4),
-                            Text(
-                              message.filename,
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
+                            Text(message.filename,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: textColor)),
                             const SizedBox(height: 4),
                             Align(
                                 alignment: Alignment.bottomRight,
                                 child: Text(formattedTime,
                                     style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey.shade600)))
+                                        fontSize: 10, color: timeColor)))
                           ]))
                 ])));
   }
@@ -343,6 +392,19 @@ class FileMessageBubble extends StatelessWidget {
         .doc(([message.senderId, message.receiverId]..sort()).join("_"))
         .collection("messages");
     String formattedSize = _formatFileSize(message.fileSize);
+
+    // Get theme
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final bottomSheetBgColor =
+        isDarkMode ? const Color(0xFF1F2C34) : Colors.grey.shade100;
+    final dividerColor =
+        isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400;
+    final infoRowBgColor =
+        isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300;
+    final infoLabelColor =
+        isDarkMode ? Colors.grey.shade500 : Colors.grey.shade700;
+    final infoValueColor = isDarkMode ? Colors.white : Colors.black;
+
     showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -350,7 +412,7 @@ class FileMessageBubble extends StatelessWidget {
         builder: (context) => Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             decoration: BoxDecoration(
-                color: const Color(0xFF1F2C34),
+                color: bottomSheetBgColor,
                 borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(10),
                     topRight: Radius.circular(10))),
@@ -359,15 +421,27 @@ class FileMessageBubble extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                      color: Colors.grey[600],
+                      color: dividerColor,
                       borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 24),
-              _whatsappInfoRow(Icons.person, "From", message.senderName),
-              _whatsappInfoRow(Icons.access_time, "Sent",
-                  CustomDateFormat.formatDateTime(message.timestamp.toDate())),
+              _whatsappInfoRow(Icons.person, "From", message.senderName,
+                  infoRowBgColor, infoLabelColor, infoValueColor),
               _whatsappInfoRow(
-                  Icons.insert_drive_file, "File", message.filename),
-              _whatsappInfoRow(Icons.data_usage, "Size", formattedSize),
+                  Icons.access_time,
+                  "Sent",
+                  CustomDateFormat.formatDateTime(message.timestamp.toDate()),
+                  infoRowBgColor,
+                  infoLabelColor,
+                  infoValueColor),
+              _whatsappInfoRow(
+                  Icons.insert_drive_file,
+                  "File",
+                  message.filename,
+                  infoRowBgColor,
+                  infoLabelColor,
+                  infoValueColor),
+              _whatsappInfoRow(Icons.data_usage, "Size", formattedSize,
+                  infoRowBgColor, infoLabelColor, infoValueColor),
               const SizedBox(height: 24),
               message.type != 'deleted'
                   ? Row(
@@ -409,27 +483,31 @@ class FileMessageBubble extends StatelessWidget {
             ])));
   }
 
-  Widget _whatsappInfoRow(IconData icon, String title, String value) => Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(children: [
-        Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-                color: Colors.grey[800],
-                borderRadius: BorderRadius.circular(20)),
-            child: Icon(icon, color: Colors.white, size: 20)),
-        const SizedBox(width: 16),
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
-          Text(value,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis)
-        ]))
-      ]));
+  Widget _whatsappInfoRow(IconData icon, String title, String value,
+          Color bgColor, Color labelColor, Color valueColor) =>
+      Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(children: [
+            Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                    color: bgColor, borderRadius: BorderRadius.circular(20)),
+                child: Icon(icon, color: valueColor, size: 20)),
+            const SizedBox(width: 16),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(title,
+                      style: TextStyle(color: labelColor, fontSize: 14)),
+                  Text(value,
+                      style: TextStyle(color: valueColor, fontSize: 16),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis)
+                ]))
+          ]));
+
   String _formatFileSize(int bytes) {
     if (bytes <= 0) return "0 B";
     final suffixes = ["B", "KB", "MB", "GB", "TB"];
@@ -437,7 +515,9 @@ class FileMessageBubble extends StatelessWidget {
     return '${(bytes / pow(1024, i)).toStringAsFixed(1)} ${suffixes[i]}';
   }
 
-  Widget _getMessageContent(FileMessage message) {
+  Widget _getMessageContent(FileMessage message, bool isDarkMode) {
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+
     switch (message.type) {
       case 'Image':
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -461,10 +541,15 @@ class FileMessageBubble extends StatelessWidget {
       case 'XLSX':
       case 'TXT':
         final config = mediaConfig[message.type]!;
+        // Adjust the background color based on theme
+        final bgColor = isDarkMode
+            ? config[3].withOpacity(0.7) // Darken in dark mode
+            : config[3]; // Normal in light mode
+
         return Container(
             alignment: Alignment.center,
             decoration: BoxDecoration(
-                color: config[3], borderRadius: BorderRadius.circular(10)),
+                color: bgColor, borderRadius: BorderRadius.circular(10)),
             padding: const EdgeInsets.all(10),
             child: Column(
                 mainAxisSize: MainAxisSize.max,
@@ -475,7 +560,8 @@ class FileMessageBubble extends StatelessWidget {
                   const SizedBox(height: 10)
                 ]));
       default:
-        return Text(message.message, style: const TextStyle(fontSize: 16));
+        return Text(message.message,
+            style: TextStyle(fontSize: 16, color: textColor));
     }
   }
 

@@ -21,43 +21,6 @@ class _MessagesPageState extends State<MessagesPage> {
     super.dispose();
   }
 
-  Widget _buildCustomAppBar() => Container(
-      decoration: BoxDecoration(color: Colors.teal),
-      child: SafeArea(
-          child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
-              child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(children: [
-                      IconButton(
-                          icon: Icon(Icons.menu, color: Colors.white, size: 28),
-                          onPressed: () => widget.toggleDrawer()),
-                      SizedBox(width: 10),
-                      Text("Chats",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold))
-                    ]),
-                    Row(children: [
-                      IconButton(
-                          icon: Icon(Icons.camera_alt,
-                              color: Colors.white, size: 28),
-                          onPressed: () {}),
-                      IconButton(
-                          icon:
-                              Icon(Icons.search, color: Colors.white, size: 28),
-                          onPressed: () => setState(
-                              () => _isSearchVisible = !_isSearchVisible)),
-                      IconButton(
-                          icon: Icon(Icons.more_vert,
-                              color: Colors.white, size: 28),
-                          onPressed: () {})
-                    ])
-                  ]))));
-
   Widget _buildSearchBar() => _isSearchVisible
       ? Padding(
           padding: const EdgeInsets.all(8.0),
@@ -126,11 +89,7 @@ class _MessagesPageState extends State<MessagesPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      body: Column(children: [
-        _buildCustomAppBar(),
-        _buildSearchBar(),
-        _buildChatList()
-      ]),
+      body: Column(children: [_buildSearchBar(), _buildChatList()]),
       floatingActionButton: FloatingActionButton(
           onPressed: () {},
           backgroundColor: Colors.teal,
