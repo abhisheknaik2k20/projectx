@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
-import 'package:SwiftTalk/CONTROLLER/Push_Notifications.dart';
+import 'package:SwiftTalk/CONTROLLER/NotificationService.dart';
 import 'package:SwiftTalk/MODELS/Message.dart';
 import 'package:SwiftTalk/MODELS/Message_Bubble.dart';
 import 'package:SwiftTalk/VIEWS/Call_Screen.dart';
@@ -272,17 +272,41 @@ class _ChatPageContentState extends State<ChatPageContent> {
   }
 
   Future getDocs() async {
-    FilePickerResult? result = await FilePicker.platform
-        .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: [
+          'pdf',
+          'pdf',
+          'doc',
+          'docx',
+          'ppt',
+          'pptx',
+          'xls',
+          'xlsx',
+          'txt'
+        ]);
     if (result != null) {
       File file = File(result.files.single.path!);
       print(result.files.single.name);
-      if (result.files.single.extension?.toLowerCase() == 'pdf') {
+      final allowedExtensions = [
+        'pdf',
+        'doc',
+        'docx',
+        'ppt',
+        'pptx',
+        'xls',
+        'xlsx',
+        'txt'
+      ];
+
+      if (allowedExtensions
+          .contains(result.files.single.extension?.toLowerCase())) {
         _uploadService.uploadFileToS3(
-            file: file,
-            fileType: 'PDF',
-            reciverId: widget.receiver.uid,
-            sendNotification: true);
+          file: file,
+          fileType: result.files.single.extension!.toUpperCase(),
+          reciverId: widget.receiver.uid,
+          sendNotification: true,
+        );
       }
     }
   }

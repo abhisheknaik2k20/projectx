@@ -15,6 +15,58 @@ import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vibration/vibration.dart';
+import 'package:SwiftTalk/API_KEYS.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:googleapis_auth/auth_io.dart' as auth;
+
+class PushNotification {
+  static Future<String> getAccessToken() async {
+    final serviceAccountJSON = SERVICE_JSON;
+    List<String> scopes = SCOPES;
+    http.Client client = await auth.clientViaServiceAccount(
+        auth.ServiceAccountCredentials.fromJson(serviceAccountJSON), scopes);
+
+    auth.AccessCredentials credentials =
+        await auth.obtainAccessCredentialsViaServiceAccount(
+            auth.ServiceAccountCredentials.fromJson(serviceAccountJSON),
+            scopes,
+            client);
+    client.close();
+    return credentials.accessToken.data;
+  }
+
+  static sendNotification(
+      {required String token,
+      required String title,
+      required String msg,
+      required String type}) async {
+    final String serverKey = await getAccessToken();
+    String endPointFirebaseCloudMessaging = FIREBASE_ENDPOINT;
+    final Map<String, dynamic> message = {
+      'message': {
+        'token': token,
+        'data': {
+          'title': title,
+          'body': msg,
+          'type': type,
+          'callerName': FirebaseAuth.instance.currentUser?.displayName ?? ''
+        }
+      }
+    };
+    final http.Response response = await http.post(
+        Uri.parse(endPointFirebaseCloudMessaging),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $serverKey'
+        },
+        body: jsonEncode(message));
+    if (response.statusCode == 200) {
+      print("Notification Sent Successfully");
+    } else {
+      print("Failed to send notification");
+    }
+  }
+}
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -23,7 +75,7 @@ class NotificationService {
   static const platform = MethodChannel('app.channel.shared.data');
   static const AndroidNotificationChannel _callChannel =
       AndroidNotificationChannel(
-          'channel_no_3', 'This sends Video Call Notifications',
+          'channel_no_6', 'This sends Video Call Notifications',
           description:
               'This channel is used for incoming video call notifications.',
           importance: Importance.max,
@@ -183,6 +235,7 @@ class NotificationService {
       ];
       final AndroidNotificationDetails androidDetails =
           AndroidNotificationDetails(_callChannel.id, _callChannel.name,
+              audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
               channelDescription: _callChannel.description,
               importance: Importance.max,
               priority: Priority.max,
@@ -196,6 +249,7 @@ class NotificationService {
               enableVibration: true,
               vibrationPattern:
                   Int64List.fromList([0, 1000, 500, 1000, 500, 1000]));
+
       final NotificationDetails notificationDetails =
           NotificationDetails(android: androidDetails);
       await _notificationsPlugin.show(notificationId, 'Incoming Video Call',

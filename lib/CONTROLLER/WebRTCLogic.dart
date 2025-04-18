@@ -57,10 +57,8 @@ class Signaling {
     var roomId = roomRef.id;
     print('New room created with SDK offer. Room ID: $roomId');
     currentRoomText = 'Current room is $roomId - You are the caller!';
-
     peerConnection?.onTrack = (RTCTrackEvent event) {
       print('Got remote track: ${event.streams[0]}');
-
       event.streams[0].getTracks().forEach((track) {
         print('Add a track to the remoteStream $track');
         remoteStream?.addTrack(track);

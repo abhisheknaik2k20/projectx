@@ -11,6 +11,59 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+final Map<String, List> mediaConfig = {
+  'Video': [
+    Icons.video_collection_sharp,
+    Colors.blue,
+    'Video',
+    Colors.blue.shade100
+  ],
+  'Audio': [Icons.audiotrack, Colors.orange, 'Audio', Colors.yellow.shade100],
+  'PDF': [
+    Icons.picture_as_pdf,
+    Colors.red,
+    'PDF Document',
+    Colors.red.shade100
+  ],
+  'DOC': [
+    Icons.description,
+    Colors.indigo,
+    'Word Document',
+    Colors.indigo.shade100
+  ],
+  'DOCX': [
+    Icons.description,
+    Colors.indigo,
+    'Word Document',
+    Colors.indigo.shade100
+  ],
+  'PPT': [
+    Icons.slideshow,
+    Colors.deepOrange,
+    'PowerPoint Presentation',
+    Colors.deepOrange.shade100
+  ],
+  'PPTX': [
+    Icons.slideshow,
+    Colors.deepOrange,
+    'PowerPoint Presentation',
+    Colors.deepOrange.shade100
+  ],
+  'XLS': [
+    Icons.table_chart,
+    Colors.green,
+    'Excel Spreadsheet',
+    Colors.lightGreen.shade100
+  ],
+  'XLSX': [
+    Icons.table_chart,
+    Colors.green,
+    'Excel Spreadsheet',
+    Colors.lightGreen.shade100
+  ],
+  'TXT': [Icons.notes, Colors.grey, 'Text File', Colors.grey.shade200],
+};
+
 class MessageBubble extends StatelessWidget {
   final Message message;
   final String chatRoomID;
@@ -400,26 +453,13 @@ class FileMessageBubble extends StatelessWidget {
       case 'Video':
       case 'Audio':
       case 'PDF':
-        final Map<String, List> mediaConfig = {
-          'Video': [
-            Icons.video_collection_sharp,
-            Colors.blue,
-            'Video',
-            Colors.blue.shade100
-          ],
-          'Audio': [
-            Icons.audiotrack,
-            Colors.orange,
-            'Audio',
-            Colors.yellow.shade100
-          ],
-          'PDF': [
-            Icons.picture_as_pdf,
-            Colors.red,
-            'PDF Document',
-            Colors.red.shade100
-          ]
-        };
+      case 'DOC':
+      case 'DOCX':
+      case 'PPT':
+      case 'PPTX':
+      case 'XLS':
+      case 'XLSX':
+      case 'TXT':
         final config = mediaConfig[message.type]!;
         return Container(
             alignment: Alignment.center,

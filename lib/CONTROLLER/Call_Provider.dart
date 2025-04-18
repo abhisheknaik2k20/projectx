@@ -10,15 +10,11 @@ class CallStatusProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final UserRepository _userRepository;
   bool _isCallActive = false;
-
   bool get isCallActive => _isCallActive;
-
   late StreamSubscription<UserModel?> _subscription;
-
   CallStatusProvider(this._userRepository) {
     _initCallStatusStream();
   }
-
   void _initCallStatusStream() {
     if (_auth.currentUser != null) {
       _subscription = _userRepository

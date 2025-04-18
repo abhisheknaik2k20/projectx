@@ -1,6 +1,6 @@
 // ignore_for_file:
 import 'dart:io';
-import 'package:SwiftTalk/CONTROLLER/Push_Notifications.dart';
+import 'package:SwiftTalk/CONTROLLER/NotificationService.dart';
 import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:SwiftTalk/MODELS/Message.dart';
 import 'package:SwiftTalk/MODELS/Notification.dart';

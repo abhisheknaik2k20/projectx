@@ -1,4 +1,5 @@
 import 'package:SwiftTalk/MODELS/Message.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:markdown_widget/markdown_widget.dart';
@@ -67,7 +68,7 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
   }
 
   Future<void> _requestPermissions() async {
-    await Permission.storage.request();
+    // Create temp directory regardless of permissions
     try {
       final tempDir = await getTemporaryDirectory();
       if (!await tempDir.exists()) {
@@ -76,6 +77,8 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
     } catch (e) {
       print("Error creating temp directory: $e");
     }
+
+    // We don't need to request permissions here as we'll do it when picking images
   }
 
   @override
@@ -87,13 +90,40 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
     super.dispose();
   }
 
+  Future<bool> _requestImagePermissions() async {
+    // For Android 13+ (API level 33+), we need to request photos permission
+    // For older versions, we use storage permission
+    if (Platform.isAndroid) {
+      // Check Android SDK version at runtime
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      final sdkInt = androidInfo.version.sdkInt;
+
+      if (sdkInt >= 33) {
+        // For Android 13+
+        final photos = await Permission.photos.request();
+        return photos.isGranted;
+      } else {
+        // For Android 12 and below
+        final storage = await Permission.storage.request();
+        return storage.isGranted;
+      }
+    } else {
+      // For iOS or other platforms
+      final photos = await Permission.photos.request();
+      return photos.isGranted;
+    }
+  }
+
   Future<void> _pickImage() async {
     try {
-      if (await Permission.storage.isGranted) {
+      final hasPermission = await _requestImagePermissions();
+
+      if (hasPermission) {
         result = await FilePicker.platform.pickFiles(
             type: FileType.image,
             allowMultiple: false,
             allowCompression: false);
+
         if (result != null &&
             result!.files.isNotEmpty &&
             result!.files.single.path != null) {
@@ -104,8 +134,10 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Storage permission is required to pick images")));
-        await Permission.storage.request();
+            content: Text("Permission is required to pick images")));
+
+        // Guide the user to app settings
+        await openAppSettings();
       }
     } catch (e) {
       print("Error picking image: $e");
