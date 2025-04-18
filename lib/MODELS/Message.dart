@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Message {
@@ -100,4 +102,11 @@ class FileMessage extends Message {
     final baseMap = super.toMap();
     return {...baseMap, 'filename': filename, 'fileSize': fileSize};
   }
+}
+
+class ChatBotMessage {
+  final String text;
+  final bool isUser;
+  final File? imageFile;
+  ChatBotMessage({required this.text, required this.isUser, this.imageFile});
 }

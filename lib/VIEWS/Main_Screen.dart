@@ -1,12 +1,11 @@
 import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
 import 'package:SwiftTalk/VIEWS/ChatScreen.dart';
 
 class MessagesPage extends StatefulWidget {
-  final AdvancedDrawerController dc;
-  const MessagesPage({required this.dc, super.key});
+  final VoidCallback toggleDrawer;
+  const MessagesPage({required this.toggleDrawer, super.key});
 
   @override
   State<MessagesPage> createState() => _MessagesPageState();
@@ -34,7 +33,7 @@ class _MessagesPageState extends State<MessagesPage> {
                     Row(children: [
                       IconButton(
                           icon: Icon(Icons.menu, color: Colors.white, size: 28),
-                          onPressed: () => widget.dc.showDrawer()),
+                          onPressed: () => widget.toggleDrawer()),
                       SizedBox(width: 10),
                       Text("Chats",
                           style: TextStyle(

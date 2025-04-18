@@ -1,16 +1,15 @@
-import 'package:SwiftTalk/CONTROLLER/Native_Date_Format.dart';
+import 'package:SwiftTalk/CONTROLLER/Native_Implement.dart';
 import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:SwiftTalk/MODELS/Notification.dart';
 import 'package:SwiftTalk/MODELS/User.dart';
 import 'package:SwiftTalk/VIEWS/ChatScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
 
 class NotificationPage extends StatelessWidget {
-  final AdvancedDrawerController dc;
+  final VoidCallback toggleDrawer;
 
-  NotificationPage({required this.dc, super.key});
+  NotificationPage({required this.toggleDrawer, super.key});
 
   final _notificationRepo = NotificationRepository();
   final _currentUser = FirebaseAuth.instance.currentUser;
@@ -29,7 +28,7 @@ class NotificationPage extends StatelessWidget {
                   backgroundColor: Colors.teal,
                   leading: IconButton(
                       icon: const Icon(Icons.menu, color: Colors.white),
-                      onPressed: () => dc.showDrawer()),
+                      onPressed: () => toggleDrawer()),
                   title: const Text('Notifications',
                       style: TextStyle(
                           color: Colors.white, fontWeight: FontWeight.w500)),

@@ -1,4 +1,4 @@
-import 'package:SwiftTalk/CONTROLLER/Native_Cached_Image.dart';
+import 'package:SwiftTalk/CONTROLLER/Native_Implement.dart';
 import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:flutter/material.dart';
 import 'package:SwiftTalk/MODELS/User.dart';

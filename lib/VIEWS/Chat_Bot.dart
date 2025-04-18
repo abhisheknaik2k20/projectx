@@ -1,9 +1,12 @@
+import 'package:SwiftTalk/MODELS/Message.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'dart:io';
 import 'package:SwiftTalk/API_KEYS.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ChatGPTScreen extends StatefulWidget {
   final ValueNotifier<double> valueNotifier;
@@ -17,14 +20,12 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
     with TickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<ChatMessage> _messages = [];
+  final List<ChatBotMessage> _messages = [];
   late final GenerativeModel _model;
   bool _isLoading = false;
   File? _imageFile;
   bool _showImagePreview = false;
   FilePickerResult? result;
-
-  // Animations
   late AnimationController _fadeController;
   late AnimationController _dotAnimationController;
   late List<Animation<double>> _dotAnimations;
@@ -37,43 +38,44 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
         apiKey: GEMINI_API,
         generationConfig:
             GenerationConfig(maxOutputTokens: 2048, temperature: 0.7));
-    _messages.add(ChatMessage(
+    _messages.add(ChatBotMessage(
         text:
             "Hello! I'm your AI assistant powered by Google Gemini. How can I help you today?",
         isUser: false));
-
-    // Initialize animation controllers
+    _requestPermissions(); // Request permissions on startup
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
+        duration: const Duration(milliseconds: 300), vsync: this);
 
     _dotAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 1800),
-      vsync: this,
-    )..repeat();
-
-    // Create dot animations with different delays
+        duration: const Duration(milliseconds: 1800), vsync: this)
+      ..repeat();
     _dotAnimations = List.generate(3, (index) {
       final beginTime = index * 0.2;
       return TweenSequence<double>([
         TweenSequenceItem(
-          tween: Tween<double>(begin: 0.5, end: 1.0)
-              .chain(CurveTween(curve: Curves.easeInOut)),
-          weight: 50,
-        ),
+            tween: Tween<double>(begin: 0.5, end: 1.0)
+                .chain(CurveTween(curve: Curves.easeInOut)),
+            weight: 50),
         TweenSequenceItem(
-          tween: Tween<double>(begin: 1.0, end: 0.5)
-              .chain(CurveTween(curve: Curves.easeInOut)),
-          weight: 50,
-        ),
-      ]).animate(
-        CurvedAnimation(
+            tween: Tween<double>(begin: 1.0, end: 0.5)
+                .chain(CurveTween(curve: Curves.easeInOut)),
+            weight: 50),
+      ]).animate(CurvedAnimation(
           parent: _dotAnimationController,
-          curve: Interval(beginTime, beginTime + 0.6, curve: Curves.linear),
-        ),
-      );
+          curve: Interval(beginTime, beginTime + 0.6, curve: Curves.linear)));
     });
+  }
+
+  Future<void> _requestPermissions() async {
+    await Permission.storage.request();
+    try {
+      final tempDir = await getTemporaryDirectory();
+      if (!await tempDir.exists()) {
+        await tempDir.create(recursive: true);
+      }
+    } catch (e) {
+      print("Error creating temp directory: $e");
+    }
   }
 
   @override
@@ -86,13 +88,29 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
   }
 
   Future<void> _pickImage() async {
-    result = await FilePicker.platform
-        .pickFiles(type: FileType.image, allowMultiple: false);
-    if (result != null) {
-      setState(() {
-        _imageFile = File(result!.files.single.path!);
-        _showImagePreview = true;
-      });
+    try {
+      if (await Permission.storage.isGranted) {
+        result = await FilePicker.platform.pickFiles(
+            type: FileType.image,
+            allowMultiple: false,
+            allowCompression: false);
+        if (result != null &&
+            result!.files.isNotEmpty &&
+            result!.files.single.path != null) {
+          setState(() {
+            _imageFile = File(result!.files.single.path!);
+            _showImagePreview = true;
+          });
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("Storage permission is required to pick images")));
+        await Permission.storage.request();
+      }
+    } catch (e) {
+      print("Error picking image: $e");
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Error picking image: $e")));
     }
   }
 
@@ -111,10 +129,10 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
     _messageController.clear();
     setState(() {
       if (messageText.isNotEmpty) {
-        _messages.add(ChatMessage(text: messageText, isUser: true));
+        _messages.add(ChatBotMessage(text: messageText, isUser: true));
       }
       if (_imageFile != null) {
-        _messages.add(ChatMessage(
+        _messages.add(ChatBotMessage(
             text: "Image uploaded", isUser: true, imageFile: _imageFile));
       }
       _isLoading = true;
@@ -126,12 +144,21 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
       List<Part> parts = [];
       if (messageText.isNotEmpty) parts.add(TextPart(messageText));
       if (_imageFile != null) {
-        final imageBytes = await _imageFile!.readAsBytes();
-        parts.add(DataPart('image/jpeg', imageBytes));
+        try {
+          final imageBytes = await _imageFile!.readAsBytes();
+          parts.add(DataPart('image/jpeg', imageBytes));
+        } catch (e) {
+          print("Error reading image: $e");
+          setState(() => _messages.add(ChatBotMessage(
+              text: "Error processing image: $e", isUser: false)));
+          _isLoading = false;
+          _imageFile = null;
+          return;
+        }
       }
       final response = await chatSession.sendMessage(Content.multi(parts));
       setState(() {
-        _messages.add(ChatMessage(
+        _messages.add(ChatBotMessage(
             text: response.text ?? "I'm not sure how to respond.",
             isUser: false));
         _isLoading = false;
@@ -139,7 +166,7 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
       });
     } catch (e) {
       setState(() {
-        _messages.add(ChatMessage(
+        _messages.add(ChatBotMessage(
             text: "Sorry, there was an error processing your request: $e",
             isUser: false));
         _isLoading = false;
@@ -203,68 +230,72 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
             onPressed: () => setState(() => _imageFile = null))
       ]));
 
-  Widget _buildMessageItem(ChatMessage message) {
+  Widget _buildMessageItem(ChatBotMessage message) {
     final slideAnimation = Tween<Offset>(
-      begin: Offset(message.isUser ? 0.1 : -0.1, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOut,
-    ));
+            begin: Offset(message.isUser ? 0.1 : -0.1, 0.0), end: Offset.zero)
+        .animate(
+            CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
 
-    final fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOut,
-    ));
+    final fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
 
     return Align(
-      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: SlideTransition(
-        position: slideAnimation,
-        child: FadeTransition(
-          opacity: fadeAnimation,
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            padding: const EdgeInsets.all(12),
-            constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75),
-            decoration: BoxDecoration(
-                color: message.isUser
-                    ? Colors.teal.shade100
-                    : Colors.grey.shade200,
-                borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: message.isUser
-                        ? const Radius.circular(16)
-                        : Radius.zero,
-                    bottomRight: message.isUser
-                        ? Radius.zero
-                        : const Radius.circular(16))),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (message.imageFile != null)
-                    Image.file(message.imageFile!,
-                        width: double.infinity, fit: BoxFit.cover),
-                  MarkdownWidget(
-                      data: message.text,
-                      shrinkWrap: true,
-                      config: MarkdownConfig(configs: [
-                        CodeConfig(
-                            style: TextStyle(
-                                backgroundColor: Colors.grey.shade100,
-                                fontFamily: 'monospace'))
-                      ]))
-                ]),
-          ),
-        ),
-      ),
-    );
+        alignment:
+            message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+        child: SlideTransition(
+            position: slideAnimation,
+            child: FadeTransition(
+                opacity: fadeAnimation,
+                child: Container(
+                    margin:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    padding: const EdgeInsets.all(12),
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.75),
+                    decoration: BoxDecoration(
+                        color: message.isUser
+                            ? Colors.teal.shade100
+                            : Colors.grey.shade200,
+                        borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(16),
+                            topRight: const Radius.circular(16),
+                            bottomLeft: message.isUser
+                                ? const Radius.circular(16)
+                                : Radius.zero,
+                            bottomRight: message.isUser
+                                ? Radius.zero
+                                : const Radius.circular(16))),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (message.imageFile != null)
+                            Container(
+                                width: double.infinity,
+                                constraints: BoxConstraints(maxHeight: 200),
+                                child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(message.imageFile!,
+                                        fit: BoxFit.cover, errorBuilder:
+                                            (context, error, stackTrace) {
+                                      return Container(
+                                          height: 100,
+                                          color: Colors.grey.shade300,
+                                          child: Center(
+                                              child: Icon(Icons.broken_image,
+                                                  size: 40,
+                                                  color: Colors.grey)));
+                                    }))),
+                          MarkdownWidget(
+                              data: message.text,
+                              shrinkWrap: true,
+                              config: MarkdownConfig(configs: [
+                                CodeConfig(
+                                    style: TextStyle(
+                                        backgroundColor: Colors.grey.shade100,
+                                        fontFamily: 'monospace'))
+                              ]))
+                        ])))));
   }
 
   Widget _buildLoadingIndicator() => Align(
@@ -290,73 +321,59 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
       ));
 
   Widget _buildDot(int index) => AnimatedBuilder(
-        animation: _dotAnimations[index],
-        builder: (context, child) {
-          return Transform.scale(
+      animation: _dotAnimations[index],
+      builder: (context, child) {
+        return Transform.scale(
             scale: _dotAnimations[index].value,
             child: Opacity(
-              opacity: _dotAnimations[index].value,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: Colors.teal,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-          );
-        },
-      );
-
-  Widget _buildMessageInput() {
-    return ValueListenableBuilder(
-        valueListenable: widget.valueNotifier,
-        builder: (context, navbarheight, child) {
-          return AnimatedContainer(
-              height: 72 * navbarheight,
-              duration: Duration(milliseconds: 100),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              color: Colors.grey[300],
-              child: Row(children: [
-                Container(
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(5)),
-                    child: IconButton(
-                        icon: const Icon(Icons.image, color: Colors.teal),
-                        onPressed: _pickImage)),
-                SizedBox(width: 5),
-                Expanded(
-                    child: Container(
-                        decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(5)),
-                        child: TextField(
-                            controller: _messageController,
-                            maxLines: null,
-                            decoration: InputDecoration(
-                              hintText: 'Type your message...',
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 12),
-                            )))),
-                SizedBox(width: 5),
-                Container(
+                opacity: _dotAnimations[index].value,
+                child: Container(
+                    width: 8,
+                    height: 8,
                     decoration: BoxDecoration(
                         color: Colors.teal,
-                        borderRadius: BorderRadius.circular(5)),
-                    child: IconButton(
-                        icon: const Icon(Icons.send, color: Colors.white),
-                        onPressed: _sendMessage))
-              ]));
-        });
-  }
-}
+                        borderRadius: BorderRadius.circular(4)))));
+      });
 
-class ChatMessage {
-  final String text;
-  final bool isUser;
-  final File? imageFile;
-  ChatMessage({required this.text, required this.isUser, this.imageFile});
+  Widget _buildMessageInput() => ValueListenableBuilder(
+      valueListenable: widget.valueNotifier,
+      builder: (context, navbarheight, child) {
+        return AnimatedContainer(
+            height: 72 * navbarheight,
+            duration: Duration(milliseconds: 100),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            color: Colors.grey[300],
+            child: Row(children: [
+              Container(
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(5)),
+                  child: IconButton(
+                      icon: const Icon(Icons.image, color: Colors.teal),
+                      onPressed: _pickImage)),
+              SizedBox(width: 5),
+              Expanded(
+                  child: Container(
+                      decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(5)),
+                      child: TextField(
+                          controller: _messageController,
+                          maxLines: null,
+                          decoration: InputDecoration(
+                            hintText: 'Type your message...',
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                          )))),
+              SizedBox(width: 5),
+              Container(
+                  decoration: BoxDecoration(
+                      color: Colors.teal,
+                      borderRadius: BorderRadius.circular(5)),
+                  child: IconButton(
+                      icon: const Icon(Icons.send, color: Colors.white),
+                      onPressed: _sendMessage))
+            ]));
+      });
 }

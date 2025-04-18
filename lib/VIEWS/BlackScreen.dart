@@ -3,7 +3,6 @@ import 'package:SwiftTalk/VIEWS/Status.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:SwiftTalk/VIEWS/Call_Screen.dart';
 import 'package:SwiftTalk/VIEWS/NotificationPage.dart';
@@ -14,20 +13,27 @@ import 'package:provider/provider.dart';
 
 class BlackScreen extends StatefulWidget {
   const BlackScreen({super.key});
-
   @override
   State<BlackScreen> createState() => _BlackScreenState();
 }
 
 class _BlackScreenState extends State<BlackScreen> {
-  final _drawerController = AdvancedDrawerController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance.collection('users');
 
-  @override
-  void dispose() {
-    _drawerController.dispose();
-    super.dispose();
+  void _toggleDrawer() {
+    if (_scaffoldKey.currentState!.isDrawerOpen) {
+      _scaffoldKey.currentState!.closeDrawer();
+    } else {
+      _scaffoldKey.currentState!.openDrawer();
+    }
+  }
+
+  void _hideDrawer() {
+    if (_scaffoldKey.currentState!.isDrawerOpen) {
+      _scaffoldKey.currentState!.closeDrawer();
+    }
   }
 
   void _navigateTo(Widget page) =>
@@ -35,16 +41,12 @@ class _BlackScreenState extends State<BlackScreen> {
 
   List<ListTile> get _drawerItems => [
         _buildDrawerItem(
-            icon: Icons.home,
-            title: 'Home',
-            onTap: () => _drawerController.hideDrawer()),
+            icon: Icons.home, title: 'Home', onTap: () => _hideDrawer()),
         _buildDrawerItem(
             icon: Icons.account_circle_rounded,
             title: 'Profile',
-            onTap: () => _navigateTo(ProfilePage(
-                  UserUID: _auth.currentUser!.uid,
-                  isMe: true,
-                ))),
+            onTap: () => _navigateTo(
+                ProfilePage(UserUID: _auth.currentUser!.uid, isMe: true))),
         _buildDrawerItem(
             icon: Icons.computer, title: 'WEB-Login', onTap: () {}),
         _buildDrawerItem(
@@ -59,82 +61,81 @@ class _BlackScreenState extends State<BlackScreen> {
           required VoidCallback onTap}) =>
       ListTile(onTap: onTap, leading: Icon(icon), title: Text(title));
 
-  Widget _buildDrawerContent() => SafeArea(
-      child: ListTileTheme(
-          textColor: Colors.white,
-          iconColor: Colors.white,
-          child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                SizedBox(height: 30),
-                StreamBuilder<DocumentSnapshot>(
-                    stream: _db.doc(_auth.currentUser?.uid).snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data != null) {
-                        final userData =
-                            snapshot.data!.data() as Map<String, dynamic>?;
-                        final profileUrl = userData?['photoURL'] ??
-                            _auth.currentUser?.photoURL;
-                        return profileUrl != null
-                            ? CircleAvatar(
-                                backgroundImage: NetworkImage(profileUrl),
-                                radius: 45,
-                              )
-                            : const Icon(Icons.account_circle,
-                                size: 100, color: Colors.white);
-                      } else {
-                        return _auth.currentUser?.photoURL != null
-                            ? CircleAvatar(
-                                backgroundImage:
-                                    NetworkImage(_auth.currentUser!.photoURL!),
-                                radius: 45)
-                            : const Icon(Icons.account_circle,
-                                size: 100, color: Colors.white);
-                      }
-                    }),
-                SizedBox(height: 10),
-                Wrap(children: [
-                  Text(_auth.currentUser?.displayName ?? 'Unknown User',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20),
-                      overflow: TextOverflow.ellipsis)
-                ]),
-                SizedBox(height: 10),
-                ..._drawerItems,
-                const Spacer(),
-                const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Text('Terms of Service | Privacy Policy',
-                        style: TextStyle(fontSize: 12, color: Colors.white54)))
-              ])));
-
-  Widget _buildDrawerBackdrop() => Container(
+  Widget _buildDrawerContent() => Container(
       decoration: BoxDecoration(
           gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.grey.shade800, Colors.black])));
+              colors: [Colors.grey.shade800, Colors.black])),
+      child: SafeArea(
+          child: ListTileTheme(
+              textColor: Colors.white,
+              iconColor: Colors.white,
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    SizedBox(height: 30),
+                    StreamBuilder<DocumentSnapshot>(
+                        stream: _db.doc(_auth.currentUser?.uid).snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData && snapshot.data != null) {
+                            final userData =
+                                snapshot.data!.data() as Map<String, dynamic>?;
+                            final profileUrl = userData?['photoURL'] ??
+                                _auth.currentUser?.photoURL;
+                            return profileUrl != null
+                                ? CircleAvatar(
+                                    backgroundImage: NetworkImage(profileUrl),
+                                    radius: 45)
+                                : const Icon(Icons.account_circle,
+                                    size: 100, color: Colors.white);
+                          } else {
+                            return _auth.currentUser?.photoURL != null
+                                ? CircleAvatar(
+                                    backgroundImage: NetworkImage(
+                                        _auth.currentUser!.photoURL!),
+                                    radius: 45)
+                                : const Icon(Icons.account_circle,
+                                    size: 100, color: Colors.white);
+                          }
+                        }),
+                    SizedBox(height: 10),
+                    Wrap(children: [
+                      Text(_auth.currentUser?.displayName ?? 'Unknown User',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20),
+                          overflow: TextOverflow.ellipsis)
+                    ]),
+                    SizedBox(height: 10),
+                    ..._drawerItems,
+                    const Spacer(),
+                    const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Text('Terms of Service | Privacy Policy',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.white54)))
+                  ]))));
 
   @override
   Widget build(BuildContext context) {
     final callStatusProvider = context.watch<CallStatusProvider>();
-    return AdvancedDrawer(
-        backdrop: _buildDrawerBackdrop(),
-        controller: _drawerController,
-        animationCurve: Curves.easeInOut,
-        animationDuration: const Duration(milliseconds: 300),
-        drawer: _buildDrawerContent(),
-        child: callStatusProvider.isCallActive
-            ? const CallScreen()
-            : HomePage(dc: _drawerController));
+    Widget mainContent = callStatusProvider.isCallActive
+        ? const CallScreen()
+        : HomePage(toggleDrawer: _toggleDrawer);
+    return Scaffold(
+        key: _scaffoldKey,
+        drawer: Drawer(
+            width: MediaQuery.of(context).size.width * 0.75,
+            child: _buildDrawerContent()),
+        body: mainContent);
   }
 }
 
 class HomePage extends StatefulWidget {
-  final AdvancedDrawerController dc;
-  const HomePage({required this.dc, super.key});
+  final VoidCallback toggleDrawer;
+  const HomePage({required this.toggleDrawer, super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -161,9 +162,9 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _pages = [
-      MessagesPage(dc: widget.dc),
+      MessagesPage(toggleDrawer: widget.toggleDrawer),
       WhatsAppStatusCommunityScreen(),
-      NotificationPage(dc: widget.dc),
+      NotificationPage(toggleDrawer: widget.toggleDrawer),
       ChatGPTScreen(valueNotifier: valueNotifier)
     ];
     _pageController = PageController(initialPage: _selectedIndex);
