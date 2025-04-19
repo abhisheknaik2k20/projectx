@@ -91,9 +91,7 @@ class Community {
   }
 
   Community addMember(UserModel user) {
-    if (members.any((member) => member.uid == user.uid)) {
-      return this;
-    }
+    if (members.any((member) => member.uid == user.uid)) return this;
 
     List<UserModel> updatedMembers = List.from(members)..add(user);
     return copyWith(

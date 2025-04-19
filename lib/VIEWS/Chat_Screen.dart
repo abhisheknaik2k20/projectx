@@ -39,8 +39,11 @@ class WhatsAppChatAppBar extends StatelessWidget
       void viewProfile() => Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (_) => ProfilePage(UserUID: reciever.uid, isMe: false)));
-
+              builder: (_) => ProfilePage(
+                  UserUID: reciever.uid,
+                  isMe: false,
+                  isCommunity: false,
+                  community: null)));
       return AppBar(
           backgroundColor: Colors.teal,
           leadingWidth: 30,
@@ -114,7 +117,14 @@ class WhatsAppChatAppBar extends StatelessWidget
             icon: Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.of(context).pop()),
         title: GestureDetector(
-            onTap: () {},
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => ProfilePage(
+                        isCommunity: true,
+                        UserUID: reciever.uid,
+                        isMe: false,
+                        community: community))),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               CircleAvatar(
                   backgroundImage: community!.imageUrl.isEmpty

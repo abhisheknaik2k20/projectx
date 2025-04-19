@@ -541,9 +541,7 @@ class FileMessageBubble extends StatelessWidget {
       case 'XLSX':
       case 'TXT':
         final config = mediaConfig[message.type]!;
-        final bgColor = isDarkMode
-            ? config[3].withOpacity(0.7) // Darken in dark mode
-            : config[3]; // Normal in light mode
+        final bgColor = isDarkMode ? config[3].withOpacity(0.7) : config[3];
 
         return Container(
             alignment: Alignment.center,
