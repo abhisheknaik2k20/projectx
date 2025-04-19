@@ -6,10 +6,15 @@ import 'package:SwiftTalk/VIEWS/ChatScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class NotificationPage extends StatelessWidget {
+class NotificationPage extends StatefulWidget {
   final VoidCallback toggleDrawer;
-  NotificationPage({required this.toggleDrawer, super.key});
+  const NotificationPage({required this.toggleDrawer, super.key});
 
+  @override
+  State<NotificationPage> createState() => _NotificationPageState();
+}
+
+class _NotificationPageState extends State<NotificationPage> {
   final _notificationRepo = NotificationRepository();
   final _currentUser = FirebaseAuth.instance.currentUser;
 
@@ -55,7 +60,14 @@ class NotificationPage extends StatelessWidget {
       'Image': Icons.image,
       'Video': Icons.video_collection,
       'Audio': Icons.audio_file,
-      'PDF': Icons.file_copy,
+      'PDF': Icons.picture_as_pdf,
+      'DOC': Icons.description,
+      'DOCX': Icons.description,
+      'PPT': Icons.slideshow,
+      'PPTX': Icons.slideshow,
+      'XLS': Icons.table_chart,
+      'XLSX': Icons.table_chart,
+      'TXT': Icons.text_snippet,
       'text': Icons.chat
     };
     return Dismissible(
@@ -77,7 +89,7 @@ class NotificationPage extends StatelessWidget {
                 Navigator.of(context).pop();
                 if (receiver != null) {
                   Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => ChatPage(receiver: receiver)));
+                      builder: (context) => ChatPage(reciever: receiver)));
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       backgroundColor: Colors.red,

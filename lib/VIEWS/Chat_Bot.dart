@@ -200,9 +200,7 @@ class _ChatGPTScreenState extends State<ChatGPTScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Detect if the theme is dark
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
         body: Column(children: [
       Expanded(

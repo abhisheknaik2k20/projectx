@@ -1,5 +1,5 @@
 import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
-import 'package:SwiftTalk/VIEWS/Community.dart';
+import 'package:SwiftTalk/VIEWS/Community_Screen.dart';
 import 'package:SwiftTalk/main.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -19,206 +19,151 @@ class BlackScreen extends StatefulWidget {
   State<BlackScreen> createState() => _BlackScreenState();
 }
 
-class _BlackScreenState extends State<BlackScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  double _dragOffset = 0.0;
-  bool _isDrawerOpen = false;
-  final double _maxSlide = 250.0;
-  final double _maxRotation = 0.15;
+class _BlackScreenState extends State<BlackScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance.collection('users');
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 250));
-  }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
+  void _toggleDrawer() => _scaffoldKey.currentState!.isDrawerOpen
+      ? _scaffoldKey.currentState!.closeDrawer()
+      : _scaffoldKey.currentState!.openDrawer();
 
-  void _toggleDrawer() {
-    if (_isDrawerOpen) {
-      _closeDrawer();
-    } else {
-      _openDrawer();
-    }
-  }
-
-  void _hideDrawer() {
-    if (_isDrawerOpen) {
-      _closeDrawer();
-    }
-  }
-
-  void _openDrawer() {
-    _animationController.animateTo(1.0);
-    setState(() {
-      _dragOffset = _maxSlide;
-      _isDrawerOpen = true;
-    });
-  }
-
-  void _closeDrawer() {
-    _animationController.animateTo(0.0);
-    setState(() {
-      _dragOffset = 0.0;
-      _isDrawerOpen = false;
-    });
-  }
+  void _hideDrawer() => _scaffoldKey.currentState!.isDrawerOpen
+      ? _scaffoldKey.currentState!.closeDrawer()
+      : null;
 
   void _navigateTo(Widget page) =>
       Navigator.push(context, MaterialPageRoute(builder: (context) => page));
 
-  void _onDragStart(DragStartDetails details) {
-    // Store initial drag position if needed
+  Widget _buildDrawerHeader() {
+    return StreamBuilder<DocumentSnapshot>(
+        stream: _db.doc(_auth.currentUser?.uid).snapshots(),
+        builder: (context, snapshot) {
+          String profileUrl;
+          if (snapshot.hasData && snapshot.data != null) {
+            final userData = snapshot.data!.data() as Map<String, dynamic>?;
+            profileUrl =
+                userData?['photoURL'] ?? _auth.currentUser?.photoURL ?? '';
+          } else {
+            profileUrl = _auth.currentUser?.photoURL ?? '';
+          }
+          return Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                profileUrl.isNotEmpty
+                    ? CircleAvatar(
+                        backgroundImage: NetworkImage(profileUrl), radius: 45)
+                    : const CircleAvatar(
+                        backgroundColor: Colors.blueGrey,
+                        radius: 45,
+                        child: Icon(Icons.account_circle,
+                            size: 65, color: Colors.white)),
+                const SizedBox(height: 15),
+                Text(_auth.currentUser?.displayName ?? 'Unknown User',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 22),
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 5),
+                Text(_auth.currentUser?.email ?? '',
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.7), fontSize: 14),
+                    overflow: TextOverflow.ellipsis)
+              ]);
+        });
   }
 
-  void _onDragUpdate(DragUpdateDetails details) {
-    setState(() {
-      _dragOffset += details.delta.dx;
-      _dragOffset = _dragOffset.clamp(0.0, _maxSlide);
-      _animationController.value = _dragOffset / _maxSlide;
-    });
-  }
-
-  void _onDragEnd(DragEndDetails details) {
-    final velocity = details.primaryVelocity ?? 0;
-    if (_isDrawerOpen) {
-      if (velocity < -500 || _dragOffset < _maxSlide / 2) {
-        _closeDrawer();
-      } else {
-        _openDrawer();
-      }
-    } else {
-      if (velocity > 500 || _dragOffset > _maxSlide / 2) {
-        _openDrawer();
-      } else {
-        _closeDrawer();
-      }
-    }
-  }
-
-  List<ListTile> get _drawerItems {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    return [
-      _buildDrawerItem(
-          icon: Icons.home, title: 'Home', onTap: () => _hideDrawer()),
-      _buildDrawerItem(
-          icon: Icons.account_circle_rounded,
-          title: 'Profile',
-          onTap: () => _navigateTo(
-              ProfilePage(UserUID: _auth.currentUser!.uid, isMe: true))),
-      _buildDrawerItem(icon: Icons.computer, title: 'WEB-Login', onTap: () {}),
-      _buildDrawerItem(
-          icon: themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-          title: themeProvider.isDarkMode ? 'Light Mode' : 'Dark Mode',
-          onTap: () {
-            themeProvider.toggleTheme();
-            _hideDrawer();
-          }),
-      _buildDrawerItem(
-          icon: Icons.power_settings_new,
-          title: 'Log-Out',
-          onTap: () => _auth.signOut())
-    ];
-  }
-
-  ListTile _buildDrawerItem(
+  Widget _buildDrawerItem(
           {required IconData icon,
           required String title,
-          required VoidCallback onTap}) =>
-      ListTile(onTap: onTap, leading: Icon(icon), title: Text(title));
+          required VoidCallback onTap,
+          Color? iconColor = Colors.grey,
+          bool showTrailing = false}) =>
+      ListTile(
+          onTap: onTap,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+          leading: Icon(icon, color: iconColor),
+          title:
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+          trailing: showTrailing
+              ? const Icon(Icons.arrow_forward_ios, size: 16)
+              : null,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)));
+
+  Widget _buildThemeToggle() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child:
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Row(children: [
+            Icon(themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                color: themeProvider.isDarkMode ? Colors.grey : Colors.amber),
+            const SizedBox(width: 16),
+            Text(themeProvider.isDarkMode ? 'Dark Mode' : 'Light Mode',
+                style: const TextStyle(fontWeight: FontWeight.w500))
+          ]),
+          Switch(
+              value: themeProvider.isDarkMode,
+              onChanged: (value) => themeProvider.toggleTheme(),
+              activeColor: Colors.teal),
+        ]));
+  }
 
   Widget _buildDrawerContent() => Container(
-      decoration: BoxDecoration(
-          gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.grey.shade900, Colors.black])),
+      decoration:
+          BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor),
       child: SafeArea(
-          child: ListTileTheme(
-              textColor: Colors.white,
-              iconColor: Colors.white,
-              child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    SizedBox(height: 30),
-                    StreamBuilder<DocumentSnapshot>(
-                        stream: _db.doc(_auth.currentUser?.uid).snapshots(),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData && snapshot.data != null) {
-                            final userData =
-                                snapshot.data!.data() as Map<String, dynamic>?;
-                            final profileUrl = userData?['photoURL'] ??
-                                _auth.currentUser?.photoURL;
-                            return profileUrl != null
-                                ? CircleAvatar(
-                                    backgroundImage: NetworkImage(profileUrl),
-                                    radius: 45)
-                                : const Icon(Icons.account_circle,
-                                    size: 100, color: Colors.white);
-                          } else {
-                            return _auth.currentUser?.photoURL != null
-                                ? CircleAvatar(
-                                    backgroundImage: NetworkImage(
-                                        _auth.currentUser!.photoURL!),
-                                    radius: 45)
-                                : const Icon(Icons.account_circle,
-                                    size: 100, color: Colors.white);
-                          }
-                        }),
-                    SizedBox(height: 10),
-                    Wrap(children: [
-                      Text(_auth.currentUser?.displayName ?? 'Unknown User',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20),
-                          overflow: TextOverflow.ellipsis)
-                    ]),
-                    SizedBox(height: 10),
-                    ..._drawerItems,
-                    const Spacer(),
-                    const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text('Terms of Service | Privacy Policy',
-                            style:
-                                TextStyle(fontSize: 12, color: Colors.white54)))
-                  ]))));
+          child: Column(children: [
+        const SizedBox(height: 30),
+        _buildDrawerHeader(),
+        const SizedBox(height: 15),
+        _buildDrawerItem(
+            icon: Icons.home_rounded,
+            title: 'Home',
+            onTap: () => _hideDrawer(),
+            showTrailing: true),
+        _buildDrawerItem(
+            icon: Icons.account_circle_rounded,
+            title: 'Profile',
+            onTap: () => _navigateTo(
+                ProfilePage(UserUID: _auth.currentUser!.uid, isMe: true)),
+            showTrailing: true),
+        _buildDrawerItem(
+            icon: Icons.computer_rounded,
+            title: 'WEB-Login',
+            onTap: () {},
+            showTrailing: true),
+        const Divider(indent: 20, endIndent: 20),
+        _buildThemeToggle(),
+        const Divider(indent: 20, endIndent: 20),
+        _buildDrawerItem(
+            icon: Icons.logout,
+            title: "Logout",
+            onTap: () async => _auth.signOut()),
+        const Spacer(),
+        Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('Terms of Service | Privacy Policy',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).textTheme.bodySmall?.color),
+                textAlign: TextAlign.center))
+      ])));
 
   @override
   Widget build(BuildContext context) {
     final callStatusProvider = context.watch<CallStatusProvider>();
-
-    return Stack(children: [
-      Scaffold(body: _buildDrawerContent()),
-      AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            final slideAmount = _maxSlide * _animationController.value;
-            final rotateAmount = _maxRotation * _animationController.value;
-            return Transform(
-                transform: Matrix4.identity()
-                  ..translate(slideAmount)
-                  ..rotateZ(rotateAmount),
-                alignment: Alignment.centerLeft,
-                child: child);
-          },
-          child: GestureDetector(
-              onHorizontalDragStart: _onDragStart,
-              onHorizontalDragUpdate: _onDragUpdate,
-              onHorizontalDragEnd: _onDragEnd,
-              behavior: HitTestBehavior.translucent,
-              child: Scaffold(
-                  body: callStatusProvider.isCallActive
-                      ? const CallScreen()
-                      : HomePage(toggleDrawer: _toggleDrawer))))
-    ]);
+    Widget mainContent = callStatusProvider.isCallActive
+        ? const CallScreen()
+        : HomePage(toggleDrawer: _toggleDrawer);
+    return Scaffold(
+        key: _scaffoldKey,
+        drawer: Drawer(
+            width: MediaQuery.of(context).size.width * 0.75,
+            child: _buildDrawerContent()),
+        body: mainContent);
   }
 }
 
@@ -371,9 +316,9 @@ class _HomePageState extends State<HomePage>
       setState(() => _selectedIndex = newIndex);
       if (!_isAnimating) {
         _isAnimating = true;
-        _animationController.forward(from: 0.0).then((_) {
-          _isAnimating = false;
-        });
+        _animationController
+            .forward(from: 0.0)
+            .then((_) => _isAnimating = false);
       }
     }
   }
@@ -484,7 +429,26 @@ class _HomePageState extends State<HomePage>
       body: PageView.builder(
           controller: _pageController,
           itemCount: _pagesInfo.length,
-          itemBuilder: (context, index) => _pagesInfo[index]['PAGE']),
+          itemBuilder: (context, index) => AnimatedBuilder(
+              animation: _pageController,
+              builder: (context, child) {
+                double page = _pageController.position.haveDimensions
+                    ? _pageController.page ?? index.toDouble()
+                    : index.toDouble();
+                double pageOffset = index - page;
+                double gauss =
+                    math.exp(-(math.pow(pageOffset.abs() - 0.5, 2) / 0.08));
+                return Transform.translate(
+                    offset: Offset(0, 30 * pageOffset.abs() * gauss),
+                    child: Transform.rotate(
+                        angle: pageOffset * 0.05,
+                        child: Transform.scale(
+                            scale: 1.0 - 0.1 * pageOffset.abs(),
+                            child: Opacity(
+                                opacity: 1.0 - 0.3 * pageOffset.abs(),
+                                child: child))));
+              },
+              child: _pagesInfo[index]['PAGE'])),
       bottomNavigationBar: _showNavBar
           ? AnimatedContainer(
               duration: const Duration(milliseconds: 100),

@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'package:SwiftTalk/CONTROLLER/Call_Provider.dart';
-import 'package:SwiftTalk/CONTROLLER/NotificationService.dart';
+import 'package:SwiftTalk/MODELS/Community.dart';
 import 'package:SwiftTalk/MODELS/Message.dart';
 import 'package:SwiftTalk/MODELS/Message_Bubble.dart';
 import 'package:SwiftTalk/VIEWS/Call_Screen.dart';
 import 'package:SwiftTalk/VIEWS/Profile.dart';
 import 'package:SwiftTalk/MODELS/User.dart';
-import 'package:SwiftTalk/VIEWS/WebRTC.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:SwiftTalk/CONTROLLER/Chat_Service.dart';
@@ -17,11 +16,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class WhatsAppChatAppBar extends StatelessWidget
     implements PreferredSizeWidget {
-  final UserModel receiver;
+  final UserModel reciever;
   final String chatroomID;
-
+  final Community? community;
   const WhatsAppChatAppBar(
-      {super.key, required this.receiver, required this.chatroomID});
+      {super.key,
+      required this.reciever,
+      required this.chatroomID,
+      this.community});
 
   @override
   Size get preferredSize => Size.fromHeight(kToolbarHeight + 10);
@@ -31,115 +33,138 @@ class WhatsAppChatAppBar extends StatelessWidget
     final auth = FirebaseAuth.instance;
     final db = FirebaseFirestore.instance;
     final currentUserId = auth.currentUser!.uid;
-    final ids = [currentUserId, receiver.uid]..sort();
-    final chatRoomId = ids.join("_");
-    void initiateCall() async {
-      await db
-          .collection('users')
-          .doc(receiver.uid)
-          .collection('call_info')
-          .doc(receiver.uid)
-          .set({
-        'key': chatRoomId,
-        'reciving_Call': true,
-        'sending_Call': false,
-        'caller_Name': auth.currentUser?.displayName
-      });
-      await db
-          .collection('users')
-          .doc(currentUserId)
-          .collection('call_info')
-          .doc(currentUserId)
-          .set({
-        'key': chatRoomId,
-        'reciving_Call': false,
-        'sending_Call': true
-      });
-      await db.collection('users').doc(receiver.uid).update({'isCall': true});
-      PushNotification.sendNotification(
-          token: receiver.fcmToken!,
-          title: "VideoCall",
-          msg:
-              "Call from ${FirebaseAuth.instance.currentUser?.displayName ?? ''}",
-          type: 'VideoCall');
-      Navigator.of(context)
-          .push(MaterialPageRoute(builder: (_) => MyHomePage()));
-    }
+    if (community == null) {
+      final ids = [currentUserId, reciever.uid]..sort();
+      final chatRoomId = ids.join("_");
+      void viewProfile() => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => ProfilePage(UserUID: reciever.uid, isMe: false)));
 
-    void viewProfile() => Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (_) => ProfilePage(UserUID: receiver.uid, isMe: false)));
-    return AppBar(
+      return AppBar(
+          backgroundColor: Colors.teal,
+          leadingWidth: 30,
+          leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop()),
+          title: StreamBuilder<DocumentSnapshot>(
+              stream: db.collection('users').doc(reciever.uid).snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return Text(reciever.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.white));
+                }
+                final userData = snapshot.data!;
+                final isOnline = userData['status'] == 'Online';
+                return GestureDetector(
+                    onTap: viewProfile,
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      CircleAvatar(
+                          backgroundImage: NetworkImage(userData['photoURL'] ??
+                              'https://default-avatar-url.com/avatar.jpg'),
+                          radius: 20),
+                      SizedBox(width: 10),
+                      Flexible(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                            Text(reciever.name,
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
+                                overflow: TextOverflow.ellipsis),
+                            Text(userData['status'] ?? 'Offline',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: isOnline
+                                        ? Colors.blue[200]
+                                        : Colors.white70,
+                                    fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis)
+                          ]))
+                    ]));
+              }),
+          actions: [
+            IconButton(
+                icon: Icon(Icons.video_call, color: Colors.white),
+                onPressed: () => ChatService.initiateCall(
+                    chatRoomId, currentUserId, reciever, context)),
+            IconButton(
+                icon: Icon(Icons.call, color: Colors.white), onPressed: () {}),
+            PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert, color: Colors.white),
+                onSelected: (choice) {
+                  if (choice == 'View Contact') viewProfile();
+                },
+                itemBuilder: (_) => [
+                      PopupMenuItem(
+                          value: 'View Contact', child: Text('View Contact')),
+                      PopupMenuItem(value: 'Media', child: Text('Media')),
+                      PopupMenuItem(value: 'Search', child: Text('Search'))
+                    ])
+          ]);
+    } else {
+      return AppBar(
         backgroundColor: Colors.teal,
         leadingWidth: 30,
         leading: IconButton(
             icon: Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.of(context).pop()),
-        title: StreamBuilder<DocumentSnapshot>(
-            stream: db.collection('users').doc(receiver.uid).snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return Text(receiver.name,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.white));
-              }
-              final userData = snapshot.data!;
-              final isOnline = userData['status'] == 'Online';
-              return GestureDetector(
-                  onTap: viewProfile,
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    CircleAvatar(
-                        backgroundImage: NetworkImage(userData['photoURL'] ??
-                            'https://default-avatar-url.com/avatar.jpg'),
-                        radius: 20),
-                    SizedBox(width: 10),
-                    Flexible(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                          Text(receiver.name,
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
-                              overflow: TextOverflow.ellipsis),
-                          Text(userData['status'] ?? 'Offline',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: isOnline
-                                      ? Colors.blue[200]
-                                      : Colors.white70,
-                                  fontWeight: FontWeight.bold),
-                              overflow: TextOverflow.ellipsis)
-                        ]))
-                  ]));
-            }),
+        title: GestureDetector(
+            onTap: () {},
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              CircleAvatar(
+                  backgroundImage: community!.imageUrl.isEmpty
+                      ? const AssetImage('assets/logo.png') as ImageProvider
+                      : NetworkImage(community!.imageUrl) as ImageProvider,
+                  radius: 20),
+              SizedBox(width: 10),
+              Flexible(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                    Text(community!.name,
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
+                        overflow: TextOverflow.ellipsis),
+                    Text('${community!.members.length} members',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis)
+                  ]))
+            ])),
         actions: [
           IconButton(
-              icon: Icon(Icons.video_call, color: Colors.white),
-              onPressed: initiateCall),
-          IconButton(
-              icon: Icon(Icons.call, color: Colors.white), onPressed: () {}),
+              icon: Icon(Icons.people, color: Colors.white), onPressed: () {}),
           PopupMenuButton<String>(
               icon: Icon(Icons.more_vert, color: Colors.white),
-              onSelected: (choice) {
-                if (choice == 'View Contact') viewProfile();
-              },
               itemBuilder: (_) => [
                     PopupMenuItem(
-                        value: 'View Contact', child: Text('View Contact')),
+                        value: 'Community Info', child: Text('Community Info')),
+                    PopupMenuItem(value: 'Search', child: Text('Search')),
                     PopupMenuItem(value: 'Media', child: Text('Media')),
-                    PopupMenuItem(value: 'Search', child: Text('Search'))
+                    PopupMenuItem(
+                        value: 'Report', child: Text('Report Community'))
                   ])
-        ]);
+        ],
+      );
+    }
   }
 }
 
 class ChatPage extends StatelessWidget {
-  final UserModel receiver;
-  const ChatPage({super.key, required this.receiver});
+  final UserModel reciever;
+  final Community? community;
+  const ChatPage({super.key, required this.reciever, this.community});
   @override
   Widget build(BuildContext context) {
     final callStatusProvider = context.watch<CallStatusProvider>();
@@ -148,17 +173,19 @@ class ChatPage extends StatelessWidget {
     }
     return Scaffold(
         appBar: WhatsAppChatAppBar(
-            receiver: receiver,
-            chatroomID: ([FirebaseAuth.instance.currentUser!.uid, receiver.uid]
+            community: community,
+            reciever: reciever,
+            chatroomID: ([FirebaseAuth.instance.currentUser!.uid, reciever.uid]
                   ..sort())
                 .join("_")),
-        body: ChatPageContent(receiver: receiver));
+        body: ChatPageContent(reciever: reciever, community: community));
   }
 }
 
 class ChatPageContent extends StatefulWidget {
-  final UserModel receiver;
-  const ChatPageContent({super.key, required this.receiver});
+  final UserModel reciever;
+  final Community? community;
+  const ChatPageContent({super.key, required this.reciever, this.community});
   @override
   State<ChatPageContent> createState() => _ChatPageContentState();
 }
@@ -168,8 +195,6 @@ class _ChatPageContentState extends State<ChatPageContent> {
   final ChatService _chatService = ChatService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ScrollController _scrollController = ScrollController();
-  String wordsSpoken = '';
-  bool isListning = false;
   bool startcall = false;
   bool shouldListen = false;
   bool speechEnabled = false;
@@ -179,9 +204,9 @@ class _ChatPageContentState extends State<ChatPageContent> {
   @override
   void initState() {
     super.initState();
-    setStatus('Online');
-    ChatroomID =
-        ([_auth.currentUser!.uid, widget.receiver.uid]..sort()).join("_");
+    ChatroomID = widget.community == null
+        ? ([_auth.currentUser!.uid, widget.reciever.uid]..sort()).join("_")
+        : widget.community!.id;
   }
 
   @override
@@ -190,27 +215,34 @@ class _ChatPageContentState extends State<ChatPageContent> {
     super.dispose();
   }
 
-  void setStatus(String status) async {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(_auth.currentUser!.uid)
-        .update({'status': status});
-  }
-
   void sendMessage() async {
     HapticFeedback.selectionClick();
-    if (_messageController.text.isNotEmpty) {
-      String textmessage = _messageController.text;
-      _messageController.clear();
+    String textmessage = _messageController.text;
+    if (textmessage.isEmpty) {
+      return;
+    }
+    _messageController.clear();
+    if (widget.community == null) {
       await _chatService.SendMessage(
           message: Message(
               senderName: _auth.currentUser?.displayName ?? '',
               senderId: _auth.currentUser!.uid,
               senderEmail: _auth.currentUser?.email ?? '',
-              receiverId: widget.receiver.uid,
+              receiverId: widget.reciever.uid,
               message: textmessage,
               timestamp: Timestamp.now(),
               type: "text"));
+    } else {
+      await _chatService.sendCommunityMessage(
+          Message(
+              senderName: _auth.currentUser?.displayName ?? '',
+              senderId: _auth.currentUser!.uid,
+              senderEmail: _auth.currentUser?.email ?? '',
+              receiverId: widget.community!.id,
+              message: textmessage,
+              timestamp: Timestamp.now(),
+              type: "text"),
+          widget.community!);
     }
   }
 
@@ -225,7 +257,9 @@ class _ChatPageContentState extends State<ChatPageContent> {
           result.files.single.extension?.toLowerCase() == 'png' ||
           result.files.single.extension?.toLowerCase() == 'gif') {
         _uploadService.uploadFileToS3(
-            reciverId: widget.receiver.uid,
+            community: widget.community,
+            isCommunity: widget.community != null,
+            reciverId: widget.reciever.uid,
             file: file,
             fileType: 'Image',
             sendNotification: true);
@@ -244,7 +278,9 @@ class _ChatPageContentState extends State<ChatPageContent> {
           result.files.single.extension?.toLowerCase() == 'mov' ||
           result.files.single.extension?.toLowerCase() == 'avi') {
         _uploadService.uploadFileToS3(
-            reciverId: widget.receiver.uid,
+            community: widget.community,
+            isCommunity: widget.community != null,
+            reciverId: widget.reciever.uid,
             file: file,
             fileType: 'Video',
             sendNotification: true);
@@ -263,9 +299,11 @@ class _ChatPageContentState extends State<ChatPageContent> {
           result.files.single.extension?.toLowerCase() == 'opus' ||
           result.files.single.extension?.toLowerCase() == 'aac') {
         _uploadService.uploadFileToS3(
+            community: widget.community,
+            isCommunity: widget.community != null,
             file: file,
             fileType: 'Audio',
-            reciverId: widget.receiver.uid,
+            reciverId: widget.reciever.uid,
             sendNotification: true);
       }
     }
@@ -302,11 +340,12 @@ class _ChatPageContentState extends State<ChatPageContent> {
       if (allowedExtensions
           .contains(result.files.single.extension?.toLowerCase())) {
         _uploadService.uploadFileToS3(
-          file: file,
-          fileType: result.files.single.extension!.toUpperCase(),
-          reciverId: widget.receiver.uid,
-          sendNotification: true,
-        );
+            community: widget.community,
+            isCommunity: widget.community != null,
+            file: file,
+            fileType: result.files.single.extension!.toUpperCase(),
+            reciverId: widget.reciever.uid,
+            sendNotification: true);
       }
     }
   }
@@ -315,12 +354,13 @@ class _ChatPageContentState extends State<ChatPageContent> {
   Widget build(BuildContext context) => Column(children: [
         Expanded(
             child: WhatsAppMessageList(
-                receiverUid: widget.receiver.uid,
+                recieverUid: widget.reciever.uid,
                 scrollController: _scrollController,
                 auth: _auth,
                 chatService: _chatService,
                 context: context,
-                chatroomid: ChatroomID)),
+                chatroomid: ChatroomID,
+                community: widget.community)),
         _buildMessageInput()
       ]);
 
@@ -337,21 +377,17 @@ class _ChatPageContentState extends State<ChatPageContent> {
                 decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(5)),
-                child: isListning
-                    ? Center(
-                        child: Text('Listening...',
-                            style: TextStyle(color: Colors.green[700])))
-                    : TextField(
-                        controller: _messageController,
-                        maxLines: null,
-                        keyboardType: TextInputType.multiline,
-                        decoration: InputDecoration(
-                            hintText: 'Type a message',
-                            hintStyle: TextStyle(color: Colors.grey[500]),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 15, vertical: 10)),
-                        style: const TextStyle(color: Colors.black87)))),
+                child: TextField(
+                    controller: _messageController,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    decoration: InputDecoration(
+                        hintText: 'Type a message',
+                        hintStyle: TextStyle(color: Colors.grey[500]),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 15, vertical: 10)),
+                    style: const TextStyle(color: Colors.black87)))),
         Container(
             margin: const EdgeInsets.only(left: 8),
             child: GestureDetector(
@@ -359,8 +395,7 @@ class _ChatPageContentState extends State<ChatPageContent> {
                 child: CircleAvatar(
                     backgroundColor: Colors.teal,
                     radius: 22,
-                    child: Icon(isListning ? Icons.mic : Icons.send,
-                        color: Colors.white, size: 22))))
+                    child: Icon(Icons.send, color: Colors.white, size: 22))))
       ]));
 
   void _showAttachmentOptions() {
@@ -442,90 +477,102 @@ class _ChatPageContentState extends State<ChatPageContent> {
 }
 
 class WhatsAppMessageList extends StatelessWidget {
-  final String receiverUid, chatroomid;
+  final String recieverUid, chatroomid;
   final ScrollController _scrollController;
   final FirebaseAuth _auth;
   final ChatService _chatService;
   final BuildContext context;
+  final Community? community;
   const WhatsAppMessageList(
       {super.key,
-      required this.receiverUid,
+      required this.recieverUid,
       required ScrollController scrollController,
       required FirebaseAuth auth,
       required ChatService chatService,
       required this.context,
+      this.community,
       required this.chatroomid})
       : _scrollController = scrollController,
         _auth = auth,
         _chatService = chatService;
 
   @override
-  Widget build(BuildContext context) => StreamBuilder<List<dynamic>>(
-      stream: _chatService.getMessages(_auth.currentUser!.uid, receiverUid),
-      builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(
-              child: TweenAnimationBuilder(
-                  duration: const Duration(milliseconds: 800),
-                  tween: Tween<double>(begin: 0, end: 1),
-                  builder: (context, double value, child) {
-                    return Opacity(
-                        opacity: value,
-                        child: Transform.scale(scale: value, child: child));
-                  },
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.chat, size: 100, color: Colors.teal[300]),
-                        const SizedBox(height: 20),
-                        Text('No messages yet',
-                            style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.bold)),
-                        Text('Start a conversation',
-                            style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.bold))
-                      ])));
-        }
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollController.animateTo(
-                _scrollController.position.maxScrollExtent,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOut);
+  Widget build(BuildContext context) {
+    Stream<List<dynamic>> messageStream;
+    if (community != null) {
+      messageStream = _chatService.getCommunityMessages(community!.id);
+    } else {
+      messageStream =
+          _chatService.getMessages(_auth.currentUser!.uid, recieverUid);
+    }
+
+    return StreamBuilder<List<dynamic>>(
+        stream: messageStream,
+        builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
+                child: TweenAnimationBuilder(
+                    duration: const Duration(milliseconds: 800),
+                    tween: Tween<double>(begin: 0, end: 1),
+                    builder: (context, double value, child) {
+                      return Opacity(
+                          opacity: value,
+                          child: Transform.scale(scale: value, child: child));
+                    },
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.chat, size: 100, color: Colors.teal[300]),
+                          const SizedBox(height: 20),
+                          Text('No messages yet',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.bold)),
+                          Text('Start a conversation',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.bold))
+                        ])));
+          }
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_scrollController.hasClients) {
+              _scrollController.animateTo(
+                  _scrollController.position.maxScrollExtent,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut);
+            }
+          });
+          return ListView.builder(
+              controller: _scrollController,
+              itemCount: snapshot.data!.length,
+              physics: const BouncingScrollPhysics(),
+              itemBuilder: (context, index) {
+                return AnimatedMessageItem(
+                    index: index,
+                    child: GestureDetector(
+                        onLongPress: () {
+                          HapticFeedback.mediumImpact();
+                          DocumentSnapshot? document =
+                              snapshot.data![index] is DocumentSnapshot
+                                  ? snapshot.data![index]
+                                  : null;
+                          if (document != null) showEditBox(document);
+                        },
+                        child: snapshot.data![index].runtimeType == FileMessage
+                            ? FileMessageBubble(
+                                message: snapshot.data![index],
+                                chatRoomID: chatroomid)
+                            : MessageBubble(
+                                message: snapshot.data![index],
+                                chatRoomID: chatroomid)));
+              });
         });
-        return ListView.builder(
-            controller: _scrollController,
-            itemCount: snapshot.data!.length,
-            physics: const BouncingScrollPhysics(),
-            itemBuilder: (context, index) {
-              return AnimatedMessageItem(
-                  index: index,
-                  child: GestureDetector(
-                      onLongPress: () {
-                        HapticFeedback.mediumImpact();
-                        DocumentSnapshot? document =
-                            snapshot.data![index] is DocumentSnapshot
-                                ? snapshot.data![index]
-                                : null;
-                        if (document != null) showEditBox(document);
-                      },
-                      child: snapshot.data![index].runtimeType == FileMessage
-                          ? FileMessageBubble(
-                              message: snapshot.data![index],
-                              chatRoomID: chatroomid)
-                          : MessageBubble(
-                              message: snapshot.data![index],
-                              chatRoomID: chatroomid)));
-            });
-      });
+  }
 
   void showEditBox(DocumentSnapshot document) async {
     TextEditingController textController = TextEditingController();

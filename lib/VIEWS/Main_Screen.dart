@@ -85,7 +85,7 @@ class _MessagesPageState extends State<MessagesPage> {
       onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (context) => ChatPage(receiver: userData))));
+              builder: (context) => ChatPage(reciever: userData))));
 
   @override
   Widget build(BuildContext context) => Scaffold(

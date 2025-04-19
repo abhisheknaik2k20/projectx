@@ -430,6 +430,7 @@ class _ProfilePageState extends State<ProfilePage>
                                       File(result.files.single.path!);
                                   String? imageURL = await S3UploadService()
                                       .uploadFileToS3(
+                                          isCommunity: false,
                                           reciverId: widget.UserUID,
                                           file: imageFile,
                                           fileType: "Image",
@@ -573,6 +574,7 @@ class _ProfilePageState extends State<ProfilePage>
                               child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    SizedBox(height: 10),
                                     _buildSectionHeader(
                                         "Media, Links, and Docs",
                                         trailing: mediaFiles.isNotEmpty
@@ -617,32 +619,6 @@ class _ProfilePageState extends State<ProfilePage>
                                                         fontSize: 16,
                                                         color: subtitleColor)),
                                                 SizedBox(height: 16),
-                                                ElevatedButton.icon(
-                                                    onPressed: () {
-                                                      if (chatroomId == null) {
-                                                        return;
-                                                      }
-                                                      loadSharedMedia(
-                                                          chatroomId!);
-                                                    },
-                                                    icon: const Icon(
-                                                        Icons.refresh),
-                                                    label: const Text("Retry"),
-                                                    style: ElevatedButton.styleFrom(
-                                                        backgroundColor:
-                                                            primaryColor,
-                                                        foregroundColor:
-                                                            Colors.white,
-                                                        elevation: 0,
-                                                        shape: RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        20)),
-                                                        padding: EdgeInsets
-                                                            .symmetric(
-                                                                horizontal: 20,
-                                                                vertical: 10)))
                                               ])))
                                     else
                                       Padding(

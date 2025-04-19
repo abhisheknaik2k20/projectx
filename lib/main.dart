@@ -16,10 +16,8 @@ import 'package:vibration/vibration.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class ThemeProvider with ChangeNotifier {
-  bool _isDarkMode = true;
-
+  bool _isDarkMode = false;
   bool get isDarkMode => _isDarkMode;
-
   ThemeData get currentTheme => _isDarkMode ? _darkTheme : _lightTheme;
 
   final ThemeData _darkTheme = ThemeData(
@@ -133,187 +131,25 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(builder: (context, themeProvider, child) {
-      return MaterialApp(
-        navigatorKey: navigatorKey,
-        title: 'SwiftTalk',
-        theme: themeProvider.currentTheme,
-        debugShowCheckedModeBanner: false,
-        home: Consumer<AuthLoadingProvider>(builder: (context, loading, child) {
-          if (loading.isLoading) {
-            return Scaffold(
-                body: Center(
-                    child: CircularProgressIndicator(color: Colors.teal)));
-          }
-          return StreamBuilder(
-              stream: FirebaseAuth.instance.authStateChanges(),
-              builder: (context, snapshot) => switch (snapshot) {
-                    AsyncSnapshot(hasData: true) => const BlackScreen(),
-                    _ => const LoginSignupScreen()
-                  });
-        }),
-      );
-    });
-  }
-}
-
-class SwipeableScaffoldScreen extends StatefulWidget {
-  const SwipeableScaffoldScreen({super.key});
-
-  @override
-  State<SwipeableScaffoldScreen> createState() =>
-      _SwipeableScaffoldScreenState();
-}
-
-class _SwipeableScaffoldScreenState extends State<SwipeableScaffoldScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  double _dragOffset = 0.0;
-  bool _isOpen = false;
-  final double _maxSlide = 250.0;
-  final double _maxRotation = 0.3;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 300));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onDragStart(DragStartDetails details) {}
-
-  void _onDragUpdate(DragUpdateDetails details) {
-    setState(() {
-      _dragOffset += details.delta.dx;
-      _dragOffset = _dragOffset.clamp(0.0, _maxSlide);
-      _controller.value = _dragOffset / _maxSlide;
-    });
-  }
-
-  void _onDragEnd(DragEndDetails details) {
-    final velocity = details.primaryVelocity ?? 0;
-    if (_isOpen) {
-      if (velocity < -500 || _dragOffset < _maxSlide / 2) {
-        _closeDrawer();
-      } else {
-        _openDrawer();
-      }
-    } else {
-      if (velocity > 500 || _dragOffset > _maxSlide / 2) {
-        _openDrawer();
-      } else {
-        _closeDrawer();
-      }
-    }
-  }
-
-  void _openDrawer() {
-    _controller.animateTo(1.0);
-    setState(() {
-      _dragOffset = _maxSlide;
-      _isOpen = true;
-    });
-  }
-
-  void _closeDrawer() {
-    _controller.animateTo(0.0);
-    setState(() {
-      _dragOffset = 0.0;
-      _isOpen = false;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => Stack(
-        children: [
-          Scaffold(
-            backgroundColor: Colors.indigo[700],
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('BOTTOM SCAFFOLD',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.indigo[700],
-                    ),
-                    onPressed: _closeDrawer,
-                    child: const Text('Close Top Scaffold'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final slideAmount = _maxSlide * _controller.value;
-              final rotateAmount = _maxRotation * _controller.value;
-              return Transform(
-                transform: Matrix4.identity()
-                  ..translate(slideAmount)
-                  ..rotateZ(rotateAmount),
-                alignment: Alignment.centerLeft,
-                child: child,
-              );
-            },
-            child: GestureDetector(
-              onHorizontalDragStart: _onDragStart,
-              onHorizontalDragUpdate: _onDragUpdate,
-              onHorizontalDragEnd: _onDragEnd,
-              behavior: HitTestBehavior.translucent,
-              child: Scaffold(
-                appBar: AppBar(
-                  title: const Text('Swipeable Scaffold Demo'),
-                  backgroundColor: Colors.blue,
-                  leading: IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: _isOpen ? _closeDrawer : _openDrawer,
-                  ),
-                ),
-                body: Container(
-                  color: Colors.white,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'TOP SCAFFOLD',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Swipe right to reveal bottom scaffold',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Swipe left to close',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
+  Widget build(BuildContext context) => Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) => MaterialApp(
+            navigatorKey: navigatorKey,
+            title: 'SwiftTalk',
+            theme: themeProvider.currentTheme,
+            debugShowCheckedModeBanner: false,
+            home: Consumer<AuthLoadingProvider>(
+                builder: (context, loading, child) {
+              if (loading.isLoading) {
+                return Scaffold(
+                    body: Center(
+                        child: CircularProgressIndicator(color: Colors.teal)));
+              }
+              return StreamBuilder(
+                  stream: FirebaseAuth.instance.authStateChanges(),
+                  builder: (context, snapshot) => switch (snapshot) {
+                        AsyncSnapshot(hasData: true) => const BlackScreen(),
+                        _ => const LoginSignupScreen()
+                      });
+            }),
+          ));
 }

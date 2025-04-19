@@ -3,6 +3,7 @@ import 'package:SwiftTalk/CONTROLLER/Chat_Service.dart';
 import 'package:SwiftTalk/CONTROLLER/User_Repository.dart';
 import 'package:SwiftTalk/MODELS/Community.dart';
 import 'package:SwiftTalk/MODELS/User.dart';
+import 'package:SwiftTalk/VIEWS/ChatScreen.dart';
 import 'package:SwiftTalk/VIEWS/Status_Preview.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -205,7 +206,8 @@ class _WhatsAppStatusCommunityScreenState
                     reciverId: null,
                     file: file,
                     fileType: "Image",
-                    sendNotification: false)));
+                    sendNotification: false,
+                    isCommunity: false)));
             final validUrls = urls.whereType<String>().toList();
             _userRepository.updateStatusImages(
                 _currentUser?.uid ?? '', validUrls);
@@ -322,7 +324,9 @@ class _WhatsAppStatusCommunityScreenState
       ]),
       trailing: Text(_getTimeString(community.lastActivity),
           style: TextStyle(color: Colors.grey, fontSize: 12)),
-      onTap: () {});
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => ChatPage(
+              reciever: UserRepository().errorUser(), community: community))));
 
   String _getTimeString(DateTime? timestamp) {
     final now = DateTime.now();
@@ -404,20 +408,23 @@ class _CreateCommunityDialogState extends State<CreateCommunityDialog> {
             reciverId: null,
             file: _selectedImage!,
             fileType: "Image",
-            sendNotification: false);
+            sendNotification: false,
+            isCommunity: false);
         if (imageUrl is String) _communityImageUrl = imageUrl;
       }
-      final communityData = {
-        'name': _nameController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'imageUrl': _communityImageUrl,
-        'memberCount': _selectedUsers.length,
-        'lastActivity': FieldValue.serverTimestamp(),
-        'createdBy': widget.currentUser.uid,
-        'createdAt': FieldValue.serverTimestamp(),
-        'members': _selectedUsers.map((user) => user.toMap()).toList()
-      };
-      await _firestore.collection('communities').add(communityData);
+      Community community = Community(
+          id: '',
+          name: _nameController.text.trim(),
+          description: _descriptionController.text.trim(),
+          imageUrl: _communityImageUrl,
+          memberCount: _selectedUsers.length,
+          lastActivity: DateTime.now(),
+          createdBy: widget.currentUser.uid,
+          createdAt: DateTime.now(),
+          members: _selectedUsers);
+      DocumentReference docRef =
+          await _firestore.collection('communities').add(community.toMap());
+      await docRef.update({'id': docRef.id});
       Navigator.of(context).pop();
       widget.onCommunityCreated();
       ScaffoldMessenger.of(context).showSnackBar(
