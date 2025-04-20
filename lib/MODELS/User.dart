@@ -91,15 +91,13 @@ class UserModel {
             }
           }).toList();
         } else if (map['statusImages'] is String) {
-          // Handle edge case where statusImages might be a single string
           final String statusImageStr = map['statusImages'] as String;
           if (statusImageStr.isNotEmpty) {
             parsedStatusImages = [
               StatusImages(
-                name: map['name'] ?? '',
-                imageUrl: statusImageStr,
-                createdAt: map['createdAt'] ?? Timestamp.now(),
-              )
+                  name: map['name'] ?? '',
+                  imageUrl: statusImageStr,
+                  createdAt: map['createdAt'] ?? Timestamp.now())
             ];
           }
         }

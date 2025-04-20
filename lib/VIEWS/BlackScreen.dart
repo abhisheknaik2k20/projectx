@@ -4,12 +4,11 @@ import 'package:SwiftTalk/main.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:SwiftTalk/VIEWS/Call_Screen.dart';
 import 'package:SwiftTalk/VIEWS/NotificationPage.dart';
 import 'package:SwiftTalk/VIEWS/Profile.dart';
 import 'package:SwiftTalk/VIEWS/Chat_Bot.dart';
-import 'package:SwiftTalk/VIEWS/Main_Screen.dart';
+import 'package:SwiftTalk/VIEWS/First_Screen.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 
@@ -286,7 +285,6 @@ class _HomePageState extends State<HomePage>
       ];
 
   Future<void> _initializeApp() async {
-    await _requestContactsPermission();
     await _reloadUser();
     _pageController.addListener(_handlePageChange);
   }
@@ -322,9 +320,6 @@ class _HomePageState extends State<HomePage>
       }
     }
   }
-
-  Future<void> _requestContactsPermission() async =>
-      await Permission.contacts.request();
 
   Future<void> _reloadUser() async {
     try {
