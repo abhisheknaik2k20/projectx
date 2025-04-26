@@ -99,7 +99,7 @@ class _CustomCachedNetworkImageState extends State<CustomCachedNetworkImage> {
               : Center(child: Icon(Icons.error, color: Colors.red));
         } else {
           final FileImage imageProvider = FileImage(snapshot.data!);
-
+        
           if (widget.imageBuilder != null) {
             return widget.imageBuilder!(context, imageProvider);
           } else {

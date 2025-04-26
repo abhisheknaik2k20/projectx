@@ -32,7 +32,6 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
-/lib/API_KEYS.dart
 /lib/firebase_options.dart
 firebase.json
 
